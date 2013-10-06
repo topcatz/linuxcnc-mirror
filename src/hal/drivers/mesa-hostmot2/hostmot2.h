@@ -374,6 +374,8 @@ typedef struct {
     u32 fabs_global_start_addr;
     u32 biss_global_start_addr;
     u32 *biss_busy_flags;
+    u32 *ssi_busy_flags;
+    u32 *fabs_busy_flags;
 } hm2_absenc_t;
 
 //
@@ -1114,6 +1116,7 @@ void hm2_encoder_force_write(hostmot2_t *hm2);
 
 
 int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index);
+int hm2_absenc_register_tram(hostmot2_t *hm2);
 void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period);
 void hm2_absenc_cleanup(hostmot2_t *hm2);
 void hm2_absenc_print_module(hostmot2_t *hm2);

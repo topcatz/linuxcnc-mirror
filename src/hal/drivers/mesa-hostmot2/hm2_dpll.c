@@ -181,8 +181,8 @@ void hm2_hm2dpll_write(hostmot2_t *hm2, long period) {
                 sizeof(u32));
         hm2->hm2dpll.control_reg1_written= buff;
     }
-    buff = (u32)((*hm2->hm2dpll.pins->time2_us / period_ms) * 0x10000) << 16
-         | (u32)((*hm2->hm2dpll.pins->time1_us / period_ms) * 0x10000);
+    buff = (u32)((-*hm2->hm2dpll.pins->time2_us / period_ms) * 0x10000) << 16
+         | (u32)((-*hm2->hm2dpll.pins->time1_us / period_ms) * 0x10000);
     if (buff != hm2->hm2dpll.timer_12_written){
         hm2->llio->write(hm2->llio,
                 hm2->hm2dpll.timer_12_addr,
@@ -190,8 +190,8 @@ void hm2_hm2dpll_write(hostmot2_t *hm2, long period) {
                 sizeof(u32));
         hm2->hm2dpll.timer_12_written = buff;
     }
-    buff = (u32)((*hm2->hm2dpll.pins->time4_us / period_ms) * 0x10000) << 16
-         | (u32)((*hm2->hm2dpll.pins->time3_us / period_ms) * 0x10000);
+    buff = (u32)((-*hm2->hm2dpll.pins->time4_us / period_ms) * 0x10000) << 16
+         | (u32)((-*hm2->hm2dpll.pins->time3_us / period_ms) * 0x10000);
     if (buff != hm2->hm2dpll.timer_34_written){
         hm2->llio->write(hm2->llio,
                 hm2->hm2dpll.timer_34_addr,

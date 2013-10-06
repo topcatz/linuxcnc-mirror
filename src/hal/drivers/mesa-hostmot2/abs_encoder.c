@@ -46,13 +46,18 @@ static void hm2_absenc_trigger(void *void_hm2, long period){
 int hm2_absenc_register_tram(hostmot2_t *hm2){
     int i;
     
+    // This function is called from the main hostmot2 driver when all the 
+    // encoder types have had a chance to be set up.
+    
     for (i = 0; i < hm2->absenc.num_chans; i++){
         int r = 0;
         hm2_sserial_remote_t *chan = &hm2->absenc.chans[i];
         
         r = hm2_register_tram_read_region(hm2, chan->reg_cs_addr,
-                sizeof(u32),
-                &chan->reg_cs_read);
+                  sizeof(u32),
+                  &chan->reg_cs_read);
+        
+        rtapi_print ("reg_cs_read = %p\n", chan->reg_cs_read);
         
         switch (chan->myinst){
         case HM2_GTAG_FABS:
@@ -96,12 +101,42 @@ int hm2_absenc_register_tram(hostmot2_t *hm2){
             return -EINVAL;
         }
     }
-    if (hm2_register_tram_read_region(hm2, hm2->absenc.biss_global_start_addr,
-            sizeof(u32),
-            &(hm2->absenc.biss_busy_flags)) < 0){
-        HM2_ERR("error registering tram read region for BiSS flags\n");
-        return -EINVAL;
+    if (hm2->absenc.ssi_global_start_addr){
+        if (hm2_register_tram_read_region(hm2, hm2->absenc.ssi_global_start_addr,
+                sizeof(u32),
+                &(hm2->absenc.ssi_busy_flags)) < 0){
+            HM2_ERR("error registering tram read region for SSI flags\n");
+            return -EINVAL;
+        }
     }
+    if (hm2->absenc.biss_global_start_addr){
+        if (hm2_register_tram_read_region(hm2, hm2->absenc.biss_global_start_addr,
+                sizeof(u32),
+                &(hm2->absenc.biss_busy_flags)) < 0){
+            HM2_ERR("error registering tram read region for BiSS flags\n");
+            return -EINVAL;
+        }
+    }
+    if (hm2->absenc.fabs_global_start_addr){
+        if (hm2_register_tram_read_region(hm2, hm2->absenc.fabs_global_start_addr,
+                sizeof(u32),
+                &(hm2->absenc.fabs_busy_flags)) < 0){
+            HM2_ERR("error registering tram read region for BiSS flags\n");
+            return -EINVAL;
+        }
+    }
+    
+    // If there is no dpll to link to, then we export the trigger function.
+    
+    if (hm2->config.num_hm2dplls == 0){
+        char name[HM2_SSERIAL_MAX_STRING_LENGTH+1] = "";
+        rtapi_snprintf(name, sizeof(name),
+                "%s.trigger-encoders", hm2->llio->name);
+        hal_export_funct(name, hm2_absenc_trigger,
+                hm2, 0, 0,hm2->llio->comp_id);
+        funct_flag = true;
+    }
+
     return 0;
 }
 
@@ -335,8 +370,17 @@ int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index) {
     //
     // looks good (so far), start initializing
     //
-    hm2->absenc.clock_frequency = md->clock_freq;
 
+    if (hm2->absenc.num_chans) { // first time though
+        hm2->absenc.clock_frequency = md->clock_freq;
+        hm2->absenc.ssi_busy_flags = kmalloc(sizeof(u32), GFP_KERNEL);
+        *hm2->absenc.ssi_busy_flags = 0;
+        hm2->absenc.biss_busy_flags = kmalloc(sizeof(u32), GFP_KERNEL);
+        *hm2->absenc.biss_busy_flags = 0;
+        hm2->absenc.fabs_busy_flags = kmalloc(sizeof(u32), GFP_KERNEL);
+        *hm2->absenc.fabs_busy_flags = 0;
+    }
+    
     for (index = 0 ; index < md->instances ; index ++){
         bool has_format = false;
         hm2_sserial_remote_t *chan;
@@ -406,7 +450,6 @@ int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index) {
                             chan->name);
                     return -EINVAL;
                 }
-                
             }
         }
         // pins.c can't handle non-contiguous instances, so set unused pins to 
@@ -422,28 +465,6 @@ int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index) {
         }
     }
 
-    // FABS is last in the list, so now we can set up the TRAM etc
-    // with no danger of stuff moving due to krealloc
-    if (md->gtag == HM2_GTAG_FABS){
-        
-        // export the absenc to HAL
-        //Unlike most other Hostmot2 functions, this one needs to have a private
-        // "trigger" function directly callable from HAL. But only if there is
-        // no hm2dpll configured;
-        
-        if (hm2->config.num_hm2dplls == 0){
-            char name[HM2_SSERIAL_MAX_STRING_LENGTH+1] = "";
-            rtapi_snprintf(name, sizeof(name),
-                    "%s.trigger-encoders", hm2->llio->name);
-            hal_export_funct(name, hm2_absenc_trigger,
-                    hm2, 0, 0,hm2->llio->comp_id);
-            funct_flag = true;
-        }
-        
-        if (hm2_absenc_register_tram(hm2)) goto fail1;
-        
-    }
-
     return hm2->absenc.num_chans;
 
     fail1:
@@ -455,81 +476,81 @@ int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index) {
 
 void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
     int i;
-
     static int err_count = 0;
+
     if (hm2->absenc.num_chans <= 0) return;
 
     // process each absenc instance independently
+    
+    if (err_count < 16){
+        rtapi_print ("SSI: %X BiSS: %X FABS: %X\n", *hm2->absenc.ssi_busy_flags, *hm2->absenc.biss_busy_flags ,*hm2->absenc.fabs_busy_flags);
+    }
     for (i = 0; i < hm2->absenc.num_chans; i ++) {
         hm2_sserial_remote_t *chan = &hm2->absenc.chans[i];
+
+        // This actually populates all the pins. 
+        hm2_sserial_read_pins(chan);
+
+        *chan->params->error = 0;
+        
         switch (chan->myinst){
         case HM2_GTAG_SSI:
-            // Check that the data is all in.
-            *chan->params->error = *chan->reg_cs_read & 0x800;
-            if (*chan->params->error){
-                if (err_count < 16){
-                    err_count++;
-                    HM2_ERR("Data transmission (SSI) not complete before %s "
-                            "read\nYou may need to change the timing of the %s "
-                            "(warning %i of 16)\n",
-                            chan->name, 
-                            chan->params->timer_num ? "hm2_dpll":"absenc_trigger_function",
-                                    err_count);
-                }
-            }
-            else
-            {
-                hm2_sserial_read_pins(chan);
+            if (*hm2->absenc.ssi_busy_flags & (1 << chan->index)){
+                *chan->params->error = 1;
+                        if(err_count < 16){
+                            HM2_ERR("Data transmission (%s) not complete on SSI"
+                                    " channel %i read You may need to change "
+                                    "the timing of %s. (warning %i of 16)\n",
+                                    chan->name, i, 
+                                    (chan->params->timer_num == 0) ? 
+                                            "the trigger function"
+                                            : "the hm2dpll timer ",
+                                            ++err_count);
+                        }
             }
             break;
         case HM2_GTAG_BISS:
-            // Check that the data is all in.
-            *chan->params->error = *hm2->absenc.biss_busy_flags & (1 << chan->index);
-            if (*chan->params->error){
-                if (err_count < 16){
-                    err_count++;
-                    HM2_ERR("Data transmission (BiSS) not complete before %s "
-                            "read\nYou may need to change the timing of the %s "
-                            "(warning %i of 16)\n",
-                            chan->name, 
-                            chan->params->timer_num ? "hm2_dpll":"absenc_trigger_function",
-                                    err_count);
-                }
-            }
-            else
-            {
-                hm2_sserial_read_pins(chan);
+            if (*hm2->absenc.biss_busy_flags & (1 << chan->index)){
+                *chan->params->error = 1;
+                        if(err_count < 16){
+                            HM2_ERR("Data transmission (%s) not complete on "
+                                    "BiSS  channel %i read You may need to "
+                                    "change the timing of %s. (warning %i of "
+                                    "16)\n",
+                                    chan->name, i, 
+                                    (chan->params->timer_num == 0) ? 
+                                            "the trigger function"
+                                            : "the hm2dpll timer ",
+                                            ++err_count);
+                        }
             }
             break;
         case HM2_GTAG_FABS:
-            // Check for errors
-            if (*chan->reg_2_read & 0x80000000 && err_count < 16){
-                err_count++;
-                HM2_ERR("Fanuc encoder channel %i cable fault\n"
-                        "(warning %i of 16)\n", chan->index, err_count);
-            }
-            *chan->params->error = *chan->reg_cs_read & 0x800;
-            if (*chan->params->error && err_count < 16){
-                err_count++;
-                HM2_ERR("Data transmission (Fanuc) not complete before %s "
-                        "read\nYou may need to change the timing of the %s "
-                        "(warning %i of 16)\n",
-                        chan->name, 
-                        chan->params->timer_num ? "hm2_dpll":"absenc_trigger_function",
-                                err_count);
-            }
-
-            else
-            {
-                hm2_sserial_read_pins(chan);
+            if (*hm2->absenc.fabs_busy_flags & (1 << chan->index)){
+                *chan->params->error = 1;
+                        if(err_count < 16){
+                            HM2_ERR("Data transmission (%s) not complete on "
+                                    "Fanuc  channel %i read You may need to "
+                                    "change the timing of %s. (warning %i of "
+                                    "16)\n",
+                                    chan->name, i, 
+                                    (chan->params->timer_num == 0) ? 
+                                            "the trigger function"
+                                            : "the hm2dpll timer ",
+                                            ++err_count);
+                        }
             }
             break;
-        default:
-            HM2_ERR("hm2_absenc_read called with unsupported type (%i)\n", 
-                    chan->myinst);
+            if ((*chan->reg_2_read & 0x80000000) && err_count < 16){
+                HM2_ERR("Fanuc encoder channel %i cable fault\n"
+                        "(warning %i of 16)\n", chan->index, ++err_count);
+            }
+            break;
+
         }
     }
 }
+
 
 void hm2_absenc_write(hostmot2_t *hm2){
 
