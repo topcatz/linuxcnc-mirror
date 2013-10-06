@@ -123,7 +123,8 @@ supplied by the hostmot2-firmware packages, available from linuxcnc.org.
 The hm2_dpll is a phase-locked loop timer module which may be used to trigger
 certain types of encoder. This parameter can be used to disable the hm2_dpll by
 setting the number to 0. There is only ever one module of this type, with 4 
-timer channels, so the other valid numbers are -1 (enable all) and 1. 
+timer channels, so the other valid numbers are -1 (enable all) and 1, both of
+which end up meaning the same thing. 
 .TP
 \fBnum_encoders\fR [optional, default: -1]
 Only enable the first N encoders.  If N is -1, all encoders are enabled.
@@ -215,10 +216,11 @@ Pins:
 (float, in) hm2_\fI<BoardType>\fR.\fI<BoardNum>\fR.hm2dpll.NN.timer-us
 This pin sets the triggering offset of the associated timer. There are 4 timers
 numbered 01 to 04, represented by the NN digits in the pin name. 
-The units are micro-seconds. Positive numbers indicate that the trigger should
+The units are micro-seconds. Negative numbers indicate that the trigger should
 occur prior to the main hostmot2 write. It is anticipated that this value will
 be calculated from the known bit-count and data-rate of the functions to be
-triggered. 
+triggered. Alternatively you can just keep making the number more negative
+until the over-run error bit in the encoder goes false. 
 The default value is set to 100uS, enough time for approximately 50 bits to be
 transmitted at 500kHz. For very critical systems it may be worth reducing this 
 until errors appear, and for very long bit-length or slow encoders it will need

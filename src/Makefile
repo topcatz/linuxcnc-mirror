@@ -665,7 +665,7 @@ ifeq ($(RTARCH):$(RTAI):$(filter $(RTFLAGS),-msse),x86_64:3:)
 EXTRA_CFLAGS += -msse
 endif
 endif
-EXTRA_CFLAGS += -g
+
 ifeq "$(USE_STUBS)" "1"
 MATHSTUB := rtapi/mathstubs.o
 endif

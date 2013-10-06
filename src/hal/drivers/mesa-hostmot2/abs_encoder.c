@@ -57,8 +57,6 @@ int hm2_absenc_register_tram(hostmot2_t *hm2){
                   sizeof(u32),
                   &chan->reg_cs_read);
         
-        rtapi_print ("reg_cs_read = %p\n", chan->reg_cs_read);
-        
         switch (chan->myinst){
         case HM2_GTAG_FABS:
             r += hm2_register_tram_read_region(hm2, chan->reg_2_addr,
@@ -481,10 +479,7 @@ void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
     if (hm2->absenc.num_chans <= 0) return;
 
     // process each absenc instance independently
-    
-    if (err_count < 16){
-        rtapi_print ("SSI: %X BiSS: %X FABS: %X\n", *hm2->absenc.ssi_busy_flags, *hm2->absenc.biss_busy_flags ,*hm2->absenc.fabs_busy_flags);
-    }
+
     for (i = 0; i < hm2->absenc.num_chans; i ++) {
         hm2_sserial_remote_t *chan = &hm2->absenc.chans[i];
 
@@ -493,60 +488,31 @@ void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
 
         *chan->params->error = 0;
         
-        switch (chan->myinst){
-        case HM2_GTAG_SSI:
-            if (*hm2->absenc.ssi_busy_flags & (1 << chan->index)){
-                *chan->params->error = 1;
-                        if(err_count < 16){
-                            HM2_ERR("Data transmission (%s) not complete on SSI"
-                                    " channel %i read You may need to change "
-                                    "the timing of %s. (warning %i of 16)\n",
-                                    chan->name, i, 
-                                    (chan->params->timer_num == 0) ? 
-                                            "the trigger function"
-                                            : "the hm2dpll timer ",
-                                            ++err_count);
-                        }
-            }
-            break;
-        case HM2_GTAG_BISS:
-            if (*hm2->absenc.biss_busy_flags & (1 << chan->index)){
-                *chan->params->error = 1;
-                        if(err_count < 16){
-                            HM2_ERR("Data transmission (%s) not complete on "
-                                    "BiSS  channel %i read You may need to "
-                                    "change the timing of %s. (warning %i of "
-                                    "16)\n",
-                                    chan->name, i, 
-                                    (chan->params->timer_num == 0) ? 
-                                            "the trigger function"
-                                            : "the hm2dpll timer ",
-                                            ++err_count);
-                        }
-            }
-            break;
-        case HM2_GTAG_FABS:
-            if (*hm2->absenc.fabs_busy_flags & (1 << chan->index)){
-                *chan->params->error = 1;
-                        if(err_count < 16){
-                            HM2_ERR("Data transmission (%s) not complete on "
-                                    "Fanuc  channel %i read You may need to "
-                                    "change the timing of %s. (warning %i of "
-                                    "16)\n",
-                                    chan->name, i, 
-                                    (chan->params->timer_num == 0) ? 
-                                            "the trigger function"
-                                            : "the hm2dpll timer ",
-                                            ++err_count);
-                        }
-            }
-            break;
-            if ((*chan->reg_2_read & 0x80000000) && err_count < 16){
-                HM2_ERR("Fanuc encoder channel %i cable fault\n"
-                        "(warning %i of 16)\n", chan->index, ++err_count);
-            }
-            break;
+        if ((chan->myinst == HM2_GTAG_FABS) 
+                &&(*chan->reg_2_read & 0x80000000)){
+            *chan->params->error = 1;
+            if((err_count & (1 << i)) == 0){
+                HM2_ERR("Fanuc encoder channel %s cable fault\n"
+                        "this warning will not repeat\n", chan->name);
+                err_count |= (1 << i);
+            }    
+        }
 
+        if (((chan->myinst == HM2_GTAG_SSI)
+                && (*hm2->absenc.ssi_busy_flags & (1 << chan->index)))
+            || ((chan->myinst == HM2_GTAG_BISS)
+                && (*hm2->absenc.biss_busy_flags & (1 << chan->index)))
+            || ((chan->myinst == HM2_GTAG_FABS)
+                && (*hm2->absenc.fabs_busy_flags & (1 << chan->index)))){
+            *chan->params->error = 1;
+            if ((err_count & (1 << i)) == 0){
+                HM2_ERR("Data transmission not complete on channel %s read. You"
+                        " may need to change the timing of %s. This warning"
+                        " will not repeat\n",  chan->name,
+                        (chan->params->timer_num == 0) ? "the trigger function"
+                        : "the hm2dpll timer");
+                err_count |= (1 << i);
+            }
         }
     }
 }
@@ -612,7 +578,6 @@ void hm2_absenc_write(hostmot2_t *hm2){
                         chan->reg_cs_addr,
                         &buff,
                         sizeof(u32));
-                HM2_PRINT("Writing 0x%08X to 0x%04X\n", buff, chan->reg_cs_addr);
                 chan->data_written = buff;
             }
             if (buff2 != chan->data2_written){
@@ -620,7 +585,6 @@ void hm2_absenc_write(hostmot2_t *hm2){
                         chan->data_reg_addr,
                         &buff,
                         sizeof(u32));
-                HM2_PRINT("Writing 0x%08X to 0x%04X\n", buff2, chan->data_reg_addr);
                 chan->data2_written = buff2;
             }
             if (buff3 != chan->data3_written){
@@ -628,7 +592,6 @@ void hm2_absenc_write(hostmot2_t *hm2){
                         chan->reg_2_addr,
                         &buff,
                         sizeof(u32));
-                HM2_PRINT("Writing 0x%08X to 0x%04X\n", buff3, chan->reg_2_addr);
                 chan->data3_written = buff3;
             }
             break;

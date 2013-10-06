@@ -821,7 +821,6 @@ int hm2_md_is_consistent(
 
 static int hm2_parse_module_descriptors(hostmot2_t *hm2) {
     int md_index, md_accepted;
-    static int absencs_found = 0;
     
     // Run through once looking for IO Ports in case other modules
     // need them
@@ -875,7 +874,6 @@ static int hm2_parse_module_descriptors(hostmot2_t *hm2) {
             case HM2_GTAG_SSI:
             case HM2_GTAG_BISS:
             case HM2_GTAG_FABS:
-                absencs_found = 1;
                 md_accepted = hm2_absenc_parse_md(hm2, md_index);
                 break;
                 
@@ -956,7 +954,7 @@ static int hm2_parse_module_descriptors(hostmot2_t *hm2) {
     // on any one run throught the absenc driver there is no way to know if 
     // it is the last time, so we need to  trigger this from somewhere that 
     // does know that it has stopped calling the sub-driver. 
-    if (absencs_found){
+    if (hm2->absenc.num_chans > 0){
          if (hm2_absenc_register_tram(hm2)){
              HM2_ERR("Failed to register TRAM for absolute encoders\n");
              return -EINVAL;
