@@ -806,7 +806,7 @@ typedef struct {
     hal_float_t *time3_us;
     hal_float_t *time4_us;
     hal_float_t *base_freq;
-    hal_s32_t *phase_error;
+    hal_float_t *phase_error;
     hal_u32_t *plimit;
     hal_u32_t *ddssize;
     hal_u32_t *time_const;
