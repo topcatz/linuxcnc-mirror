@@ -820,6 +820,7 @@ typedef struct {
 
     u32 base_rate_addr;
     u32 base_rate_written;
+    u32 phase_err_addr;
     u32 control_reg0_addr;
     u32 control_reg0_written;
     u32 control_reg1_addr;

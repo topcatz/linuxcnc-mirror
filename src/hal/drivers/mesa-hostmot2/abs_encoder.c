@@ -483,13 +483,8 @@ int hm2_absenc_parse_md(hostmot2_t *hm2, int md_index) {
 
 void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
     int i;
-    static int err_count = 0, timer=0;
-#define TIME_LIM 100000000
+    static int err_count;
     if (hm2->absenc.num_chans <= 0) return;
-    
-    if (timer <= TIME_LIM){ // suppress error messages before DPLL synch
-        timer += period;
-    }
 
     // process each absenc instance independently
 
@@ -504,7 +499,7 @@ void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
         if ((chan->myinst == HM2_GTAG_FABS) 
                 &&(*chan->reg_2_read & 0x80000000)){
             *chan->params->error = 1;
-            if((err_count & (1 << i)) == 0 && timer >= TIME_LIM ){
+            if((err_count & (1 << i)) == 0){
                 HM2_ERR("Fanuc encoder channel %s cable fault\n"
                         "this warning will not repeat\n", chan->name);
                 err_count |= (1 << i);
@@ -516,8 +511,10 @@ void hm2_absenc_process_tram_read(hostmot2_t *hm2, long period) {
                 && (*hm2->absenc.biss_busy_flags & (1 << chan->index)))
           || ((chan->myinst == HM2_GTAG_FABS)
                 && (*hm2->absenc.fabs_busy_flags & (1 << chan->index)))){
+            
             *chan->params->error = 1;
-            if ((err_count & (1 << i)) == 0 && timer >= TIME_LIM){
+            
+            if ((err_count & (1 << i)) == 0){
                 HM2_ERR("Data transmission not complete on channel %s read."
                         " You  may need to change the timing of %s. This "
                         "warning  will not repeat\n",  chan->name,

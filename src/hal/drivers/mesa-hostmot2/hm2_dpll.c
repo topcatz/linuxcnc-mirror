@@ -62,6 +62,7 @@ int hm2_hm2dpll_parse_md(hostmot2_t *hm2, int md_index) {
 
     hm2->hm2dpll.clock_frequency = md->clock_freq;
     hm2->hm2dpll.base_rate_addr = md->base_address + 0 * md->register_stride;
+    hm2->hm2dpll.phase_err_addr = md->base_address + 1 * md->register_stride;
     hm2->hm2dpll.control_reg0_addr = md->base_address + 2 * md->register_stride;
     hm2->hm2dpll.control_reg1_addr = md->base_address + 3 * md->register_stride;
     hm2->hm2dpll.timer_12_addr = md->base_address + 4 * md->register_stride;
@@ -140,8 +141,19 @@ void hm2_hm2dpll_write(hostmot2_t *hm2, long period) {
     hm2_hm2dpll_pins_t *pins;
     double period_ms = period / 1000;
     u32 buff;
+    static int init_counter = 0;
     
     if (hm2->hm2dpll.num_instances == 0) return;
+    
+    if (init_counter < 100){
+        init_counter++;
+        buff = 0; // Force phase error to zero at startup
+        hm2->llio->write(hm2->llio,
+                hm2->hm2dpll.phase_err_addr,
+                &buff,
+                sizeof(u32));
+        hm2->hm2dpll.control_reg0_written= buff;
+    }
     
     pins = hm2->hm2dpll.pins;
     
@@ -165,7 +177,6 @@ void hm2_hm2dpll_write(hostmot2_t *hm2, long period) {
                 &buff,
                 sizeof(u32));
         hm2->hm2dpll.base_rate_written= buff;
-        rtapi_print ("New base rate buffer = %08x, ddsize = %i\n clock=%d\n", buff, *pins->ddssize, hm2->hm2dpll.clock_frequency);
     }
     buff = (u32)(*pins->prescale << 24 
                 | *pins->plimit);
