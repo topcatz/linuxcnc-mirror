@@ -92,8 +92,15 @@ report device propertiers on console at startup
 Fixme: These ini config variables need to be documented better...
 .B
 .IP DEBUG
+Set to a non-zero value to enable general debug output from the VFD-B
+driver.  Optional.
 .B
 .IP MODBUS_DEBUG
+Set to a non-zero value to enable modbus debug output from the VFD-B
+driver.  Optional.
+.B
+.IP TYPE
+Modbus connection type, must be "RTU" for now.  Required.
 .B
 .IP BITS
 .B
@@ -122,8 +129,6 @@ Fixme: These ini config variables need to be documented better...
 .IP RTS_MODE
 .B
 .IP SERIAL_MODE
-.B
-.IP TYPE
 .B
 .IP MOTOR_HZ,\ MOTOR_RPM
 The frequency of the motor (in Hz) and the corresponding speed of the
