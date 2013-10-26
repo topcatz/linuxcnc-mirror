@@ -1439,6 +1439,11 @@ int do_loadusr_cmd(char *args[])
     }
     /* add a NULL to terminate the argv array */
     argv[m] = NULL;
+
+    /* get set of ready components before executing this one */
+    std::set<std::string> ready_components;
+    find_ready_components(ready_components, false);
+
     /* start the child process */
     pid = hal_systemv_nowait(argv);
     /* make sure we reconnected to the HAL */
@@ -1449,8 +1454,6 @@ int do_loadusr_cmd(char *args[])
     }
     hal_ready(comp_id);
     if ( wait_comp_flag ) {
-        std::set<std::string> ready_components;
-        find_ready_components(ready_components, false);
         int ready = 0, count=0, exited=0;
         hal_comp_t *comp = NULL;
 	retval = 0;
