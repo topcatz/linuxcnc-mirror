@@ -1364,26 +1364,15 @@ int do_unload_cmd(char *mod_name) {
     }
 }
 
-static char *guess_comp_name(char *prog_name)
-{
-    static char name[HAL_NAME_LEN+1];
-    char *last_slash = strrchr(prog_name, '/');
-    char *st = last_slash ? last_slash + 1 : prog_name;
-    char *last_dot = strrchr(st, '.');
-    char *en = last_dot ? last_dot : prog_name + strlen(prog_name);
-    size_t len = en-st;
-
-    snprintf(name, sizeof(name), "%.*s", (int)len, st);
-    return name;
-}
-
-static void find_ready_components(std::set<std::string> &ready, bool print) {
+static bool find_ready_components(std::set<std::string> &ready, bool print) {
     rtapi_mutex_get(&(hal_data->mutex));
     int next = hal_data->comp_list_ptr;
+    bool any_inserted = false;
     while(next) {
         hal_comp_t *comp = shmptr<hal_comp_t>(next);
         if(comp->ready) {
             bool inserted = ready.insert(comp->name).second;
+            any_inserted = any_inserted || inserted;
             if(inserted && print)
                 fprintf(stderr, "\nNote: component '%s' became ready.\n"
                     "Use 'loadusr -Wn%s ...' to wait for this component "
@@ -1392,6 +1381,7 @@ static void find_ready_components(std::set<std::string> &ready, bool print) {
         next = comp->next_ptr;
     }
     rtapi_mutex_give(&(hal_data->mutex));
+    return any_inserted;
 }
 
 int do_loadusr_cmd(char *args[])
@@ -1439,9 +1429,6 @@ int do_loadusr_cmd(char *args[])
     args += optind;
     prog_name = *args++;
     if (prog_name == 0) { return -EINVAL; }
-    if(!new_comp_name) {
-	new_comp_name = guess_comp_name(prog_name);
-    }
     /* prepare to exec() the program */
     argv[0] = prog_name;
     /* loop thru remaining arguments */
@@ -1477,22 +1464,37 @@ int do_loadusr_cmd(char *args[])
 		exited = 1;
 	    }
 	    /* check for program becoming ready */
-            rtapi_mutex_get(&(hal_data->mutex));
-            comp = halpr_find_comp_by_name(new_comp_name);
-            if(comp && comp->ready) {
-                ready = 1;
+            if(new_comp_name)
+            {
+                rtapi_mutex_get(&(hal_data->mutex));
+                comp = halpr_find_comp_by_name(new_comp_name);
+                if(comp && comp->ready) {
+                    ready = 1;
+                }
+                rtapi_mutex_give(&(hal_data->mutex));
+                if(ready) continue;
             }
-            rtapi_mutex_give(&(hal_data->mutex));
+            else
+            {
+                bool new_comp_came_ready = find_ready_components(ready_components, false);
+                if(new_comp_came_ready) { ready = 1; continue; }
+            }
 	    /* pacify the user */
             count++;
             if(count == 200) {
-                fprintf(stderr, "Waiting for component '%s' to become ready.",
-                        new_comp_name);
-                find_ready_components(ready_components, true);
+                if(new_comp_name)
+                {
+                    fprintf(stderr, "Waiting for component '%s' to become ready.",
+                            new_comp_name);
+                    find_ready_components(ready_components, true);
+                } else {
+                    fprintf(stderr, "Waiting for component to become ready.");
+                }
                 fflush(stderr);
             } else if(count > 200 && count % 10 == 0) {
                 fprintf(stderr, ".");
-                find_ready_components(ready_components, true);
+                if(new_comp_name)
+                    find_ready_components(ready_components, true);
                 fflush(stderr);
             }
         }
