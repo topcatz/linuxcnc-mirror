@@ -37,6 +37,8 @@
  *  information, go to www.linuxcnc.org.
  */
 
+#include <set>
+#include <string>
 #include "config.h"
 #include "rtapi.h"		/* RTAPI realtime OS API */
 #include "hal.h"		/* HAL public API decls */
@@ -1375,6 +1377,23 @@ static char *guess_comp_name(char *prog_name)
     return name;
 }
 
+static void find_ready_components(std::set<std::string> &ready, bool print) {
+    rtapi_mutex_get(&(hal_data->mutex));
+    int next = hal_data->comp_list_ptr;
+    while(next) {
+        hal_comp_t *comp = shmptr<hal_comp_t>(next);
+        if(comp->ready) {
+            bool inserted = ready.insert(comp->name).second;
+            if(inserted && print)
+                fprintf(stderr, "\nNote: component '%s' became ready.\n"
+                    "Use 'loadusr -Wn%s ...' to wait for this component "
+                    " by name.", comp->name, comp->name);
+        }
+        next = comp->next_ptr;
+    }
+    rtapi_mutex_give(&(hal_data->mutex));
+}
+
 int do_loadusr_cmd(char *args[])
 {
     int wait_flag, wait_comp_flag, ignore_flag;
@@ -1443,6 +1462,8 @@ int do_loadusr_cmd(char *args[])
     }
     hal_ready(comp_id);
     if ( wait_comp_flag ) {
+        std::set<std::string> ready_components;
+        find_ready_components(ready_components, false);
         int ready = 0, count=0, exited=0;
         hal_comp_t *comp = NULL;
 	retval = 0;
@@ -1467,9 +1488,11 @@ int do_loadusr_cmd(char *args[])
             if(count == 200) {
                 fprintf(stderr, "Waiting for component '%s' to become ready.",
                         new_comp_name);
+                find_ready_components(ready_components, true);
                 fflush(stderr);
             } else if(count > 200 && count % 10 == 0) {
                 fprintf(stderr, ".");
+                find_ready_components(ready_components, true);
                 fflush(stderr);
             }
         }
