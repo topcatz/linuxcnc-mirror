@@ -4,11 +4,11 @@ USERSRCS += $(IOSRCS) $(IOV2SRCS)
 
 ../bin/io: $(call TOOBJS, $(IOSRCS)) ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	@$(CXX) $(LDFLAGS) -o $@ $^ 
+	@$(CXX) $(LDFLAGS) -o $@ $^  $(BOOST_PYTHON_LIBS) -l$(LIBPYTHON) -ldl
 
 ../bin/iov2: $(call TOOBJS, $(IOV2SRCS)) ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcnchal.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	@$(CXX) $(LDFLAGS) -o $@ $^
+	@$(CXX) $(LDFLAGS) -o $@ $^  $(BOOST_PYTHON_LIBS) -l$(LIBPYTHON) -ldl
 
 TARGETS += ../bin/io ../bin/iov2
-
+PYTARGETS += ../bin/io ../bin/iov2

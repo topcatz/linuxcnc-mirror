@@ -1123,7 +1123,7 @@ class GlCanonDraw:
                 glBlendFunc(GL_ONE, GL_CONSTANT_ALPHA)
 
                 current_tool = self.get_current_tool()
-                if current_tool is None or current_tool.diameter == 0:
+                if current_tool is None or current_tool['diameter'] == 0:
                     if self.canon:
                         g = self.canon
                         x,y,z = 0,1,2
@@ -1225,7 +1225,7 @@ class GlCanonDraw:
             if self.is_lathe():
                 glRotatef(90, 0, 1, 0)
             else:
-                dia = current_tool.diameter
+                dia = current_tool['diameter']
                 r = self.to_internal_linear_unit(dia) / 2.
                 q = gluNewQuadric()
                 glEnable(GL_LIGHTING)

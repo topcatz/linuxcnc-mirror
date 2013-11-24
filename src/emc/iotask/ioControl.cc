@@ -70,6 +70,9 @@
 #include "rcs_print.hh"
 #include "tool_parse.h"
 
+#include <boost/python.hpp>
+namespace bp = boost::python;
+
 static RCS_CMD_CHANNEL *emcioCommandBuffer = 0;
 static RCS_CMD_MSG *emcioCommand = 0;
 static RCS_STAT_CHANNEL *emcioStatusBuffer = 0;
@@ -573,36 +576,75 @@ int read_hal_inputs(void)
     return retval;
 }
 
-void load_tool(int pocket) {
-    if(random_toolchanger) {
-        // swap the tools between the desired pocket and the spindle pocket
-        CANON_TOOL_TABLE temp;
-        char *comment_temp;
-
-        temp = emcioStatus.tool.toolTable[0];
-        emcioStatus.tool.toolTable[0] = emcioStatus.tool.toolTable[pocket];
-        emcioStatus.tool.toolTable[pocket] = temp;
-
-        comment_temp = ttcomments[0];
-        ttcomments[0] = ttcomments[pocket];
-        ttcomments[pocket] = comment_temp;
-
-        if (0 != saveToolTable(tool_table_file, emcioStatus.tool.toolTable))
+int tool_in_spindle(int tool = -2){
+    Py_Initialize();
+    try {
+        bp::object toolstore, ret;
+        toolstore = bp::import("toolstore").attr("toolstore")();
+        if (tool == -2){
+            ret = toolstore.attr("get_spindle_tool")();
+            return bp::extract<int>(ret["toolID"]);
+        } else {
+            ret = toolstore.attr("set_spindle_tool")(tool);
+            return 0;
+        }
+        if (PyMapping_HasKeyString(ret.ptr(), "Error")){
             emcioStatus.status = RCS_ERROR;
-    } else if(pocket == 0) {
-        // on non-random tool-changers, asking for pocket 0 is the secret
-        // handshake for "unload the tool from the spindle"
-	emcioStatus.tool.toolTable[0].toolno = -1;
-        ZERO_EMC_POSE(emcioStatus.tool.toolTable[0].offset);
-        emcioStatus.tool.toolTable[0].diameter = 0.0;
-        emcioStatus.tool.toolTable[0].frontangle = 0.0;
-        emcioStatus.tool.toolTable[0].backangle = 0.0;
-        emcioStatus.tool.toolTable[0].orientation = 0;
-    } else {
-        // just copy the desired tool to the spindle
-        emcioStatus.tool.toolTable[0] = emcioStatus.tool.toolTable[pocket];
+            rtapi_print("error in tool-in-spindle code, returning -1\n");
+            return -1;
+        }
+        
+    } catch (bp::error_already_set const &e){
+        PyErr_WriteUnraisable(Py_None);
+        emcioStatus.status = RCS_ERROR;
+        return -1;
     }
 }
+
+
+void load_tool(int pocket) {
+    int new_t = -1, old_t = tool_in_spindle();
+    try {
+        bp::object toolstore, ret;
+        toolstore = bp::import("toolstore").attr("toolstore")();
+        ret = toolstore.attr("get_tool_by_pocket")(pocket);
+
+        if (PyMapping_HasKeyString(ret.ptr(), "Error")){
+            emcioStatus.status = RCS_ERROR;
+            rtapi_print("error in load_tool code\n");
+            return;
+        }
+        new_t = bp::extract<int>(ret["toolID"]);
+        rtapi_print("new_t = %i\n", new_t);
+        if(random_toolchanger) {
+            // swap the tools between the desired pocket and the spindle pocket
+            tool_in_spindle(new_t);
+            ret = toolstore.attr("set_tool_pocket")(old_t, pocket);
+            if (PyMapping_HasKeyString(ret.ptr(), "Error")){
+                emcioStatus.status = RCS_ERROR;
+                rtapi_print("error in load_tool code\n");
+                return;
+            }
+            emcioStatus.tool.toolInSpindle = new_t;
+
+        } else if(pocket == 0) {
+            // on non-random tool-changers, asking for pocket 0 is the secret
+            // handshake for "unload the tool from the spindle"
+            tool_in_spindle(0);
+            emcioStatus.tool.toolInSpindle = 0;
+        } else {
+            // just copy the desired tool to the spindle
+            tool_in_spindle(new_t);
+            emcioStatus.tool.toolInSpindle = new_t;
+        }
+
+    } catch (bp::error_already_set const &e){
+        PyErr_WriteUnraisable(Py_None);
+        emcioStatus.status = RCS_ERROR;
+        return;
+    }
+}
+
 
 void reload_tool_number(int toolno) {
     if(random_toolchanger) return; // doesn't need special handling here
@@ -613,7 +655,6 @@ void reload_tool_number(int toolno) {
         }
     }
 }
-
 
 /********************************************************************
 *
@@ -640,12 +681,12 @@ int read_tool_inputs(void)
     
     if (*iocontrol_data->tool_change && *iocontrol_data->tool_changed) {
         if(!random_toolchanger && emcioStatus.tool.pocketPrepped == 0) {
-            emcioStatus.tool.toolInSpindle = 0;
+            tool_in_spindle(0);
         } else {
             // the tool now in the spindle is the one that was prepared
-            emcioStatus.tool.toolInSpindle = emcioStatus.tool.toolTable[emcioStatus.tool.pocketPrepped].toolno; 
+            tool_in_spindle(*(iocontrol_data->tool_prep_number)); 
         }
-	*(iocontrol_data->tool_number) = emcioStatus.tool.toolInSpindle; //likewise in HAL
+	*(iocontrol_data->tool_number) = *(iocontrol_data->tool_prep_number); //likewise in HAL
 	load_tool(emcioStatus.tool.pocketPrepped);
 	emcioStatus.tool.pocketPrepped = -1; //reset the tool preped number, -1 to permit tool 0 to be loaded
 	*(iocontrol_data->tool_prep_number) = 0; //likewise in HAL
@@ -757,7 +798,7 @@ int main(int argc, char *argv[])
     /* set status values to 'normal' */
     emcioStatus.aux.estop = 1; //estop=1 means to emc that ESTOP condition is met
     emcioStatus.tool.pocketPrepped = -1;
-    emcioStatus.tool.toolInSpindle = 0;
+    tool_in_spindle(0);
     emcioStatus.coolant.mist = 0;
     emcioStatus.coolant.flood = 0;
     emcioStatus.lube.on = 0;
@@ -818,7 +859,7 @@ int main(int argc, char *argv[])
 	    rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_INIT\n");
 	    loadToolTable(tool_table_file, emcioStatus.tool.toolTable,
 		    fms, ttcomments, random_toolchanger);
-	    reload_tool_number(emcioStatus.tool.toolInSpindle);
+	    reload_tool_number(tool_in_spindle());
 	    break;
 
 	case EMC_TOOL_HALT_TYPE:
@@ -838,53 +879,63 @@ int main(int argc, char *argv[])
 	    break;
 
 	case EMC_TOOL_PREPARE_TYPE:
-            {
-                signed int p = ((EMC_TOOL_PREPARE*)emcioCommand)->pocket;
-                int t = ((EMC_TOOL_PREPARE*)emcioCommand)->tool;
-                rtapi_print_msg(RTAPI_MSG_DBG, "IOCONTROL EMC_TOOL_PREPARE tool=%d pocket=%d\n", t, p);
+	{
+	    signed int p = ((EMC_TOOL_PREPARE*)emcioCommand)->pocket;
+	    int t = ((EMC_TOOL_PREPARE*)emcioCommand)->tool;
+	    //rtapi_print_msg(RTAPI_MSG_DBG, "IOCONTROL EMC_TOOL_PREPARE tool=%d pocket=%d\n", t, p);
+	    rtapi_print("IOCONTROL EMC_TOOL_PREPARE tool=%d pocket=%d\n", t, p);
+	    *(iocontrol_data->tool_prep_pocket) = p;
+	    *(iocontrol_data->tool_prep_number) = t;
 
-                *(iocontrol_data->tool_prep_pocket) = p;
-                *(iocontrol_data->tool_prep_number) = t;
-
-                /* then set the prepare pin to tell external logic to get started */
-                *(iocontrol_data->tool_prepare) = 1;
-                // the feedback logic is done inside read_hal_inputs()
-                // we only need to set RCS_EXEC if RCS_DONE is not already set by the above logic
-                if (tool_status != 10) //set above to 10 in case PREP already finished (HAL loopback machine)
-                    emcioStatus.status = RCS_EXEC;
-            }
-	    break;
+	    /* then set the prepare pin to tell external logic to get started */
+	    *(iocontrol_data->tool_prepare) = 1;
+	    // the feedback logic is done inside read_hal_inputs()
+	    // we only need to set RCS_EXEC if RCS_DONE is not already set by the above logic
+	    if (tool_status != 10) //set above to 10 in case PREP already finished (HAL loopback machine)
+	        emcioStatus.status = RCS_EXEC;
+	}
+	break;
 
 	case EMC_TOOL_LOAD_TYPE:
-	    rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_LOAD loaded=%d prepped=%d\n", emcioStatus.tool.toolInSpindle, emcioStatus.tool.pocketPrepped);
+	    /* There is an egregious temporary kludge here. The original iocontrol
+	    puts the tool in the selected pocket in the spindle. This is not the 
+	    way I (atp) see it happening in the final version when the tool change
+	    behaviour will be fielded by a loadable HAL module. To make this work 
+	    right now, I am simply putting the T-number tool in the spindle rather 
+	    than add a find-tool-by-pocket to the toolstore class*/
 
-            // it doesn't make sense to load a tool from the spindle pocket
-            if (random_toolchanger && emcioStatus.tool.pocketPrepped == 0) {
-                break;
-            }
+	{
+	    int tis = tool_in_spindle();
+	    rtapi_print("EMC_TOOL_LOAD loaded=%d prepped=%d\n", tis, emcioStatus.tool.pocketPrepped);
 
-            // it's not necessary to load the tool already in the spindle
-            if (!random_toolchanger && emcioStatus.tool.pocketPrepped > 0 &&
-                emcioStatus.tool.toolInSpindle == emcioStatus.tool.toolTable[emcioStatus.tool.pocketPrepped].toolno) {
-                break;
-            }
+	    // it doesn't make sense to load a tool from the spindle pocket
+	    if (random_toolchanger && emcioStatus.tool.pocketPrepped == 0) {
+	        break;
+	    }
+
+	    // it's not necessary to load the tool already in the spindle
+	    if (!random_toolchanger && emcioStatus.tool.pocketPrepped > 0 &&
+	            tis == *(iocontrol_data->tool_prep_number)) {
+	        break;
+	    }
 
 	    if (emcioStatus.tool.pocketPrepped != -1) {
-		//notify HW for toolchange
-		*(iocontrol_data->tool_change) = 1;
-		// the feedback logic is done inside read_hal_inputs() we only
-		// need to set RCS_EXEC if RCS_DONE is not already set by the
-		// above logic
-		if (tool_status != 11)
-		    // set above to 11 in case LOAD already finished (HAL
-		    // loopback machine)
-		    emcioStatus.status = RCS_EXEC;
+	        //notify HW for toolchange
+	        *(iocontrol_data->tool_change) = 1;
+	        // the feedback logic is done inside read_hal_inputs() we only
+	        // need to set RCS_EXEC if RCS_DONE is not already set by the
+	        // above logic
+	        if (tool_status != 11)
+	            // set above to 11 in case LOAD already finished (HAL
+	            // loopback machine)
+	            emcioStatus.status = RCS_EXEC;
 	    }
-	    break;
+	}
+	break;
 
 	case EMC_TOOL_UNLOAD_TYPE:
 	    rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_UNLOAD\n");
-	    emcioStatus.tool.toolInSpindle = 0;
+	    tool_in_spindle(0);
 	    break;
 
 	case EMC_TOOL_LOAD_TOOL_TABLE_TYPE:
@@ -897,7 +948,7 @@ int main(int argc, char *argv[])
 				  fms, ttcomments, random_toolchanger))
 		    emcioStatus.status = RCS_ERROR;
 		else
-		    reload_tool_number(emcioStatus.tool.toolInSpindle);
+		    reload_tool_number(tool_in_spindle());
 	    }
 	    break;
 
@@ -927,7 +978,7 @@ int main(int argc, char *argv[])
                 emcioStatus.tool.toolTable[p].backangle = b;
                 emcioStatus.tool.toolTable[p].orientation = o;
 
-                if (emcioStatus.tool.toolInSpindle == t) {
+                if (tool_in_spindle() == t) {
                     emcioStatus.tool.toolTable[0] = emcioStatus.tool.toolTable[p];
                 }                    
             }
@@ -940,9 +991,9 @@ int main(int argc, char *argv[])
 		int pocket_number;
 		
 		pocket_number = ((EMC_TOOL_SET_NUMBER *) emcioCommand)->tool;
-		rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_SET_NUMBER old_loaded_tool=%d new_pocket_number=%d new_tool=%d\n", emcioStatus.tool.toolInSpindle, pocket_number, emcioStatus.tool.toolTable[pocket_number].toolno);
-		emcioStatus.tool.toolInSpindle = emcioStatus.tool.toolTable[pocket_number].toolno;
-		*(iocontrol_data->tool_number) = emcioStatus.tool.toolInSpindle; //likewise in HAL
+		rtapi_print_msg(RTAPI_MSG_DBG, "EMC_TOOL_SET_NUMBER old_loaded_tool=%d new_pocket_number=%d new_tool=%d\n", tool_in_spindle(), pocket_number, *(iocontrol_data->tool_prep_number));
+		tool_in_spindle(*(iocontrol_data->tool_prep_number));
+		*(iocontrol_data->tool_number) = *(iocontrol_data->tool_prep_number); //likewise in HAL
                 load_tool(pocket_number);
 	    }
 	    break;

@@ -77,7 +77,8 @@ else:
 
 if hal_present == 1 :
     import hal
-
+    
+from toolstore import toolstore
 
 import ConfigParser
 cp = ConfigParser.ConfigParser
@@ -652,7 +653,8 @@ class LivePlotter:
         self.notifications_clear = False
         self.notifications_clear_info = False
         self.notifications_clear_error = False
-
+        self.toolstore = toolstore()
+        
     def start(self):
         if self.running.get(): return
         if not os.path.exists(linuxcnc.nmlfile):
@@ -733,9 +735,9 @@ class LivePlotter:
                 or self.stat.g5x_index != o.last_g5x_index
                 or self.stat.rotation_xy != o.last_rotation_xy
                 or self.stat.limit != o.last_limit
-                or self.stat.tool_table[0] != o.last_tool
                 or self.stat.motion_mode != o.last_motion_mode
-                or abs(speed - self.last_speed) > .01):
+                or abs(speed - self.last_speed) > .01
+                or self.toolstore.get_offset(self.stat.tool_in_spindle) != o.last_tool):
             o.redraw_soon()
             o.last_limits = limits
             o.last_limit = self.stat.limit
@@ -746,7 +748,7 @@ class LivePlotter:
             o.last_g5x_index = self.stat.g5x_index
             o.last_rotation_xy = self.stat.rotation_xy
             o.last_motion_mode = self.stat.motion_mode
-            o.last_tool = self.stat.tool_table[0]
+            o.last_tool = self.toolstore.get_offset(self.stat.tool_in_spindle)
             o.last_joint_position = self.stat.joint_actual_position
             self.last_speed = speed
             self.lastpts = self.logger.npts
@@ -804,17 +806,17 @@ class LivePlotter:
                 on_any_limit = True
         vupdate(vars.on_any_limit, on_any_limit)
         global current_tool
-        current_tool = self.stat.tool_table[0]
-        if current_tool:
-            tool_data = {'tool': current_tool[0], 'zo': current_tool[3], 'xo': current_tool[1], 'dia': current_tool[10]}
-        if current_tool is None:
-            vupdate(vars.tool, _("Unknown tool %d") % self.stat.tool_in_spindle)
-        elif tool_data['tool'] == 0 or tool_data['tool'] == -1:
+        if self.stat.tool_in_spindle <= 0:
             vupdate(vars.tool, _("No tool"))
-        elif current_tool.xoffset == 0 and not lathe:
-            vupdate(vars.tool, _("Tool %(tool)d, offset %(zo)g, diameter %(dia)g") % tool_data)
         else:
-            vupdate(vars.tool, _("Tool %(tool)d, zo %(zo)g, xo %(xo)g, dia %(dia)g") % tool_data)
+            current_tool = self.toolstore.get_offset(self.stat.tool_in_spindle)
+            current_tool['tool'] = self.stat.tool_in_spindle
+            if 'Error' in current_tool:
+                vupdate(vars.tool, _("Unknown tool %d") % self.stat.tool_in_spindle)
+            elif current_tool['X'] == 0 and not lathe:
+                vupdate(vars.tool, _("Tool %(tool)d, offset %(Z)g, diameter %(diameter)g") % current_tool)
+            else:
+                vupdate(vars.tool, _("Tool %(tool)d, zo %(Z)g, xo %(X)g, dia %(diameter)g") % current_tool)
         active_codes = []
         for i in self.stat.gcodes[1:]:
             if i == -1: continue
@@ -1566,7 +1568,7 @@ class _prompt_touchoff(_prompt_float):
         self.buttons.tkraise()
         for i in [1,2,3,4,5,6,7,8,9]:
             t.bind("<Alt-KeyPress-%s>" % i, lambda event, system=systems[i-1]: c.set(system))
-        if current_tool.id > 0:
+        if current_tool['tool'] > 0:
             t.bind("<Alt-t>", lambda event: c.set(systems[9]))
             t.bind("<Alt-0>", lambda event: c.set(systems[9]))
 

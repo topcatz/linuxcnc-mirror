@@ -137,12 +137,12 @@ class toolstore:
         
     def get_offset(self, h):
         """Takes a single integer (as might be provided by G43 Hnn) and uses it to apply an offset
-        returns a tuple of offsets"""
+        returns a tuple of offsets. The SQL blob decides what this number means"""
         self.cur.execute(self.__get_script("get_offset"), {'H':h})
         r = self.cur.fetchone()
         if r == None:
-            offs = {'Error':'Offset %d can not be found in the tool database' % h}
-            return offs
+            ret = {'Error':'Offset %d can not be found in the tool database' % h}
+            return ret
         ret = {}
         for k in r.keys():
             if r[k] == None:
@@ -165,6 +165,47 @@ class toolstore:
             else:
                 ret[k] = r[k]
         return ret
+    
+    def set_spindle_tool(self, t, s = 1):
+        """Puts the toolID found by T-number t into spindle number s"""
+        print "set_spindle_tool: %i" % t
+        self.cur.execute(self.__get_script("set_spindle_tool"), {'T':t, 'S':s})
+        self.db.commit()
+        
+    def get_spindle_tool(self):
+        """Tries to find a T-number to match the ID of the tool in the spindle"""
+        print "get_spindle_tool:"
+        self.cur.execute(self.__get_script("get_spindle_tool"))
+        ret = self.cur.fetchone()
+        if ret == None:
+            ret = {'toolID':0}
+        return ret
+
+    def set_tool_pocket(self, t, p):
+        """Puts the toolID t into pocket p"""
+        print "set_tool_pocket:"
+        self.cur.execute(self.__get_script("set_tool_pocket"), {'T':t, 'P':p})
+        r = self.cur.fetchone()
+        self.db.commit()
+        
+    def get_pocket_by_tool(self, t):
+        """Tries to find a pocket containing toolID t"""
+        print "get_pocket_by_tool:"
+        self.cur.execute(self.__get_script("get_pocket_by_tool"), {'T':t})
+        ret = self.cur.fetchone()
+        if ret == None:
+            ret = {'toolID':0}
+        return ret
+
+    def get_tool_by_pocket(self, p):
+        print "get_tool_by_pocket:"
+        """Returns the toolID in pocket p"""
+        self.cur.execute(self.__get_script("get_tool_by_pocket"), {'P':p})
+        ret = self.cur.fetchone()
+        if ret == None:
+            ret = {'Error':'Unable to put tool %d in pocket %d' % (t, p)}
+        return ret
+        
 
 
         
