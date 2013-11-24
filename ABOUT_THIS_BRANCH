@@ -1,0 +1,29 @@
+This branch is probbaly a "throw away an start again"
+
+It attempts to use an SQLite database to store the tool data. 
+
+It appears to pretty-much work with Axis, and doen't look too hopeless with Touchy. It needs new INI file options, and so there is only one working demo config at the moment.
+
+The current iteration attempts to perfectly copy the legacy tool table, but with the marginal advantage of having the potential to use more tools. 
+
+Tooledit simply will not work with this system. I don't think touch-off works either. You need to edit the database withan SQL editor. This is not the final intent, I hasten to add. 
+
+The idea was to allow configurable database structures and a configurable API. This is achieved by having an XML-like file of SQL queries that is parsed by code written in Python. 
+C++ code that needs the data accesses it through boost::python by method name. 
+
+This works, and is very adaptable, but it tastes wrong. One problem is that getting to the database from C++ is ugly code-wise, and brings in a lot of dependencies. 
+
+A wrapper class might help. In fact is might be the case that an actual C++-style Method embedded in emcStat could work neatly and almost transparently. But I don't know if
+that code can actually support that sort of thing. It gets passed around by pointers and casting so much that I am not sure that embedding executable code is possible. And if it is
+will that exceed the NML message size?)
+
+Anyway, having got this far my impression is that supporting arbitrary database structures is a mistake. We can use a fixed database structure (Users can always add more fields of their own if they want them) 
+Also, I think that perhaps the database access API can be written in C++. It seems a lot easier to import C++ into Python than the reverse. Of course there may me things one can do in Python to export to C++ more
+tidily than is possible with Boost:Python. I need to learn more about this. 
+
+Anyway. Have a play. You will break it, it isn't even difficult to do so. 
+
+Please edit and add to this file. This is likel to be a scratchp[ad for further developments. 
+
+atp 23/11/13
+

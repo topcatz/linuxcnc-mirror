@@ -1,0 +1,15 @@
+This is a sample configuration that demonstrates tool-table access from an SQL database. 
+It only really works with Axis, and requires extra INI file entries, so this is the only sample
+configuration that will actually work. 
+
+The extra INI file entries are:
+
+[TOOL]
+
+SQL = classic.sql
+TOOL_DB = tool_db
+
+This uses an identical set of tool parameters to the normal tool table. In fact the only advantage is that there can be more than 56 entries. 
+
+Note that other user interfaces will probably be using the legacy tool table data (which still exists in NML in this branch). 
+
