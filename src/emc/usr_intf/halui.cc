@@ -388,8 +388,6 @@ static double maxFeedOverride=1;
 static double maxMaxVelocity=1;
 static double minSpindleOverride=0.0;
 static double maxSpindleOverride=1.0;
-static EMC_TASK_MODE_ENUM halui_old_mode = EMC_TASK_MODE_MANUAL;
-static int halui_sent_mdi = 0;
 
 // the NML channels to the EMC task
 static RCS_CMD_CHANNEL *emcCommandBuffer = 0;
@@ -1086,21 +1084,15 @@ int sendMdiCmd(char *mdi)
 {
     EMC_TASK_PLAN_EXECUTE emc_task_plan_execute_msg;
 
-    if (emcStatus->task.mode != EMC_TASK_MODE_MDI) {
-	halui_old_mode = emcStatus->task.mode;
-	sendMdi();
-    }
     strcpy(emc_task_plan_execute_msg.command, mdi);
     emc_task_plan_execute_msg.serial_number = ++emcCommandSerialNumber;
     emcCommandBuffer->write(emc_task_plan_execute_msg);
-    halui_sent_mdi = 1;
     return emcCommandWaitReceived(emcCommandSerialNumber);
 }
 
 static int sendMdiCommand(int n)
 {
     int r1,r2;
-    halui_old_mode = emcStatus->task.mode;
     r1 = sendMdi();
     r2 = sendMdiCmd(mdi_commands[n]);
     return r1 || r2;
@@ -2014,19 +2006,6 @@ static void modify_hal_pins()
     } else {
 	*(halui_data->estop_is_activated)=0;
     }
-
-    if (halui_sent_mdi) { // we have an ongoing MDI command
-	if (emcStatus->status == 1) { //which seems to have finished
-	    halui_sent_mdi = 0;
-	    switch (halui_old_mode) {
-		case EMC_TASK_MODE_MANUAL: sendManual();break;
-		case EMC_TASK_MODE_MDI: break;
-		case EMC_TASK_MODE_AUTO: sendAuto();break;
-		default: sendManual();break;
-	    }
-	}
-    }
-	
 
     if (emcStatus->task.mode == EMC_TASK_MODE_MANUAL) {
 	*(halui_data->mode_is_manual)=1;
