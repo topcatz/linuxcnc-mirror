@@ -1,0 +1,102 @@
+/* demo for using gcmc file with [py]ngcgui
+
+ngcgui tags follow: 
+
+info: message to appear on ngcgui tab page:
+format is: ^//ngcgui: info: info text
+//ngcgui: info: STAR (gcmc G-Code Meta Compiler)
+
+gcmc options (start with hyphen): 
+format is: ^//ngcgui: -optioname [optionvalue] 
+//ngcgui: --precision 5
+
+Variables to present in ngcgui with optional default value and comment
+format is ^//ngcgui: vname [= value , [comment text]]
+
+//ngcgui: feedr=100,Feed Rate
+//ngcgui: x1=0,Xoffset
+//ngcgui: y1=0,Yoffset
+//ngcgui: myscale=1,MyScale
+*/
+
+//example below derived from: http://www.vagrearg.org/content/gcmc#running
+
+/*
+  Copyright: 2013
+  Author:    Bertho Stultiens <bertho@vagrearg.org>
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+
+/* Return new path from 'srcpath' traced internally offset by 'width' */
+function erode(srcpath, width)
+{
+    local n, i, pp, pc, pn, v1, v2, bisect, newpoint, crossp, res;
+    n = count(srcpath);
+    res = {};
+    for(i = 0; i < n; i++) {
+        pp = srcpath[(i-1+n)%n];    /* Previous point */
+        pc = srcpath[i];        /* Current point */
+        pn = srcpath[(i+1+n)%n];    /* Next point */
+        v1 = normalize(pp - pc);
+        v2 = normalize(pn - pc);
+        bisect = width * normalize(v1 + v2);
+        newpoint = bisect + pc;
+        if(i > 0) {
+            /* Check convex polygon interior angle */
+            crossp = v1[0] * v2[1] - v1[1] * v2[0];
+            if(crossp < 0.0) {
+                newpoint = -bisect + pc;
+            }
+        }
+        res += { newpoint };
+    }
+    return res;
+}
+
+/* Trace the path at offset */
+function tracepath(path, offset)
+{
+    move(path[count(path)-1] + offset);
+    dwell(0);
+    foreach(path; p) {
+        move(p + offset);
+        dwell(0);
+    }
+}
+
+/* A nice star */
+starpath = {
+    [ x1+1,  y1+1], [ x1+0,  y1+3],
+    [x1+-1,  y1+1], [x1+-3,  y1+0],
+    [x1+-1, y1+-1], [ x1+0, y1+-3],
+    [ x1+1, y1+-1], [ x1+3,  y1+0]
+};
+
+
+/******************** Program start ********************/
+feedrate(feedr);
+goto([-,-,1mm]);            /* Safe Z */
+starpath *= myscale*10mm;           /* Scale the star */
+goto(starpath[count(starpath)-1]);  /* First coordinate */
+move([-,-,-1mm]);           /* Goto cutting depth */
+
+/* Cut the stars smaller and smaller */
+for(i = 0; i < 8; i++) {
+    tracepath(erode(starpath, -2.0mm * i), []);
+}
+
+move([-,-,1mm]);            /* Back to safe Z */
