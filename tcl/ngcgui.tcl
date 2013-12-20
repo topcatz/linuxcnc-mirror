@@ -970,9 +970,9 @@ proc ::ngcgui::parse_gcmc {hdl ay_name filename args} {
     
     set ct 1
     # catch: early versions of gcmc returns $?=1
-    if [catch {set ans "[exec $::ngc(any,gcmc,executable) --version]"
+    if [catch {set ans [exec $::ngc(any,gcmc,executable) --version]
               }  msg ] {
-      puts stderr "parse_gcmc: unexpected version:<$version>"
+      puts stderr "parse_gcmc: unexpected version:<$msg>"
     } else {
       foreach line [split $ans \n] {
         set ::ngc(any,gcmc,version,line$ct) $line
