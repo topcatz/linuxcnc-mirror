@@ -1055,7 +1055,14 @@ proc ::ngcgui::parse_gcmc {hdl ay_name filename args} {
     }
     lappend names $name
     set ay($hdl,arg,name,$num02) $name
-    if [info exists dvalue] {set ay($hdl,arg,dvalue,$num02) $dvalue}
+    if [info exists dvalue] {
+      # this is a convenience to make it simple to edit to
+      # add a var without removing the semicolon
+      #    xstart = 10;
+      #    //ngcgui: xstart = 10;
+      set dvalue [lindex [split $dvalue ";"] 0] ;# strip after a ";"
+      set ay($hdl,arg,dvalue,$num02) $dvalue
+    }
     if [info exists comment] {
       set ay($hdl,arg,comment,$num02) $comment
     } else {

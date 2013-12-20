@@ -1,0 +1,31 @@
+//ngcgui: info: SQUARE -- simple gcmc example
+
+/*COPY this file to a directory in your path that
+*      precedes the directory of this library file
+*      and edit as required
+*
+*      ngcgui uses the editor specified by $VISUAL
+*/
+
+//--------------------------------------------------------------------
+// to make entry box for any of these vars, precede with //ngcgui:
+ frate =  100;
+    x1 =    0;
+    y1 =    0;
+ width =    1;
+height =    1;
+ zsafe =  0.1;
+     z =   -1;
+//--------------------------------------------------------------------
+
+feedrate(frate);
+
+goto([x1, y1, zsafe]);
+
+move([x1, y1, z]);
+move([x1 + width, y1, z]);
+move([x1 + width, y1 + height, z]);
+move([x1, y1 + height, z]);
+move([x1, y1, z]);
+
+goto([-, -, zsafe]);

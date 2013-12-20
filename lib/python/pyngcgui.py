@@ -1392,7 +1392,7 @@ class SubFile():
                 self.gcmc_opts.append(ropt.group(1))
 
             name = None
-            dvalue = ''
+            dvalue =  None
             comment = ''
             r3 = re.search(r'^ *\/\/ *ngcgui *: *(.*?) *= *(.*?) *\, *(.*?) *$', l)
             r2 = re.search(r'^ *\/\/ *ngcgui *: *(.*?) *= *(.*?) *$', l)
@@ -1407,6 +1407,15 @@ class SubFile():
             elif r1:
                 print 'r1-1 opt read_gcmc:g1:',r1.group(1)
                 name = r1.group(1)
+
+            if dvalue:
+                # this is a convenience to make it simple to edit to
+                # add a var without removing the semicolon
+                #    xstart = 10;
+                #    //ngcgui: xstart = 10;
+                dvalue = dvalue.split(";")[0] # ignore all past a ;
+            else:
+                dvalue = ''
 
             if name:
                 if comment is '':
