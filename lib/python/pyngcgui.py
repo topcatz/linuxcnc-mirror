@@ -3227,7 +3227,9 @@ class SaveSection():
 
             parmlist.append(value)
             if sub_info.pdict.has_key('isgcmc'):
-                calltxt = calltxt
+                # just print value of gcmc parm embedded in gcmc result
+                # the call requires no parms
+                pass
             else:
                 calltxt = calltxt + '[%s]' % value
             # these appear only for not-expandsub
@@ -3240,7 +3242,11 @@ class SaveSection():
             mypg.cpanel.set_message(_('Failed to create feature'))
             raise ValueError
         calltxt = calltxt + '\n'
-
+        # expandsub not honored for gcmc
+        if (mypg.expandsub and sub_info.pdict.has_key('isgcmc')):
+            print(_('expandsub not honored for gcmc file: %s')%
+                     os.path.basename(sub_info.sub_file))
+            mypg.expandsub = 0
         #---------------------------------------------------------------------
         if (not mypg.expandsub) and (not force_expand):
             self.sdata.append("(%s: call subroutine file: %s)\n" % (
