@@ -14,11 +14,20 @@
 //ngcgui: p2=  0    ,Phase 2
 //ngcgui: p3= 90    ,Phase 3
 
+//ngcgui: zsafe =  1; //, zsafe (mm)
+//ngcgui: zcut  = -1; //, zcut (mm,neg)
+
+//ngcgui: xoffset = 0;
+//ngcgui: yoffset = 0;
+
+//ngcgui: scalex = 5;
+//ngcgui: scaley = 5;
+//ngcgui: scalez = 1;
 */
 
 /*
   Copyright: 2013
-  Author:    Alan Battersby <>
+  Author:    Alan Battersby <alan.battersby@virginmedia.com>
  
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -99,13 +108,13 @@ function CutPath(wheels, start, inc, end, cdepth, scale)
 		  /* we should be at safe height */
 		  /* so move to cutting depth    */
 			point = scale(CalcPoint(wheels, angle), scale);
-			goto(point);
+			goto(point + global_offset);
 			goto([-,-,cdepth * scale[2]]);
 		}
 		else
 		{
 			point = scale(CalcPoint(wheels, angle), scale);
-			move(point);
+			move(point + global_offset);
 		}
 	}
 }
@@ -117,9 +126,10 @@ function GoAtSafeHeight(x,y)
 }
 
 /******************* main program ***********************/
-safeheight = 1mm;
-cuttingdepth = -1mm;
-svec = [5,5,1];
+global_offset = [xoffset * 1mm, yoffset * 1mm];
+safeheight = 1mm * zsafe;
+cuttingdepth = 1mm * zcut;
+svec = [scalex * 1mm,scaley*1mm,scalez*1mm];
 wheels = {
 	CreateWheel(r1, s1, p1 * 1deg),
 	CreateWheel(r2, s2, p2 * 1deg),

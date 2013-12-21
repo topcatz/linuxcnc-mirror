@@ -14,9 +14,15 @@ Variables to present in ngcgui with optional default value and comment
 format is ^//ngcgui: vname [= value , [comment text]]
 
 //ngcgui: feedr=100,Feed Rate
-//ngcgui: x1=0,Xoffset
-//ngcgui: y1=0,Yoffset
-//ngcgui: myscale=1,MyScale
+//ngcgui: zsafe = 1 ; //,zsafe (mm)
+//ngcgui: zcut = -1 ; //,zcut (mm,neg typ)
+//ngcgui: x1=0,Xoffset(mm)
+//ngcgui: y1=0,Yoffset(mm)
+
+//ngcgui: myscale=1,scale
+//ngcgui: n_erodes = 4; //, Erodes
+//ngcgui: erode_width = 2; //,width (+/-)
+
 */
 
 //example below derived from: http://www.vagrearg.org/content/gcmc#running
@@ -80,23 +86,26 @@ function tracepath(path, offset)
 
 /* A nice star */
 starpath = {
-    [ x1+1,  y1+1], [ x1+0,  y1+3],
-    [x1+-1,  y1+1], [x1+-3,  y1+0],
-    [x1+-1, y1+-1], [ x1+0, y1+-3],
-    [ x1+1, y1+-1], [ x1+3,  y1+0]
+    [ 1,  1], [ 0,  3],
+    [-1,  1], [-3,  0],
+    [-1, -1], [ 0, -3],
+    [ 1, -1], [ 3,  0]
 };
 
-
+theoffset = [x1*1mm,y1*1mm];
 /******************** Program start ********************/
 feedrate(feedr);
-goto([-,-,1mm]);            /* Safe Z */
+ZSAFE = zsafe * 1mm;
+ZCUT = zcut * 1mm;
+
+goto([-,-,ZSAFE]);            /* Safe Z */
 starpath *= myscale*10mm;           /* Scale the star */
 goto(starpath[count(starpath)-1]);  /* First coordinate */
-move([-,-,-1mm]);           /* Goto cutting depth */
+move([-,-,ZCUT]);           /* Goto cutting depth */
 
 /* Cut the stars smaller and smaller */
-for(i = 0; i < 8; i++) {
-    tracepath(erode(starpath, -2.0mm * i), []);
+for(i = 0; i < n_erodes; i++) {
+    tracepath(erode(starpath, erode_width * -1mm * i), theoffset);
 }
 
-move([-,-,1mm]);            /* Back to safe Z */
+move([-,-,ZSAFE]);            /* Back to safe Z */
