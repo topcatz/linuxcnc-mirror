@@ -924,7 +924,7 @@ class CandidateFiles():
                 ftxt = fd.read()
                 fd.close()
 
-                if os.path.splitext(fname)[-1] in {'.gcmc','.GCMC'}:
+                if os.path.splitext(fname)[-1] in ['.gcmc','.GCMC']:
                     stat = '%sgcmc:ok' % stat
 
                 if ftxt.find('not_a_subfile') >= 0:
@@ -1222,9 +1222,9 @@ class SubFile():
         self.mtime = os.path.getmtime(self.sub_file)
         self.md5 = md5sum(self.sub_file)
 
-        if os.path.splitext(self.sub_file)[-1] in {'.ngc','.NGC','.nc','.NC'}:
+        if os.path.splitext(self.sub_file)[-1] in ['.ngc','.NGC','.nc','.NC']:
             self.read_ngc()
-        elif os.path.splitext(self.sub_file)[-1] in {'.gcmc','.GCMC'}:
+        elif os.path.splitext(self.sub_file)[-1] in ['.gcmc','.GCMC']:
             self.read_gcmc()
         else:
             user_message(mtype=gtk.MESSAGE_ERROR
@@ -1386,10 +1386,12 @@ class SubFile():
             if rinfo:
                 #print 'info read_gcmc:g1:',rinfo.group(1)
                 self.pdict['info'] = rinfo.group(1) # last one wins
+                continue
 
             ropt = re.search(r'^ *\/\/ *ngcgui *: *(-.*)$' ,l)
             if ropt:
                 self.gcmc_opts.append(ropt.group(1))
+                continue
 
             name = None
             dvalue =  None
@@ -2175,21 +2177,57 @@ class ControlPanel():
             xcmd.append('--define=' + name + '=' + m.efields.pentries[k].getentry())
 
         xcmd.append(m.sub_file)
-        #print "xcmd=",xcmd
+        print "xcmd=",xcmd
+        e_message = ".*Runtime message\(\): *(.*)"
+        e_warning = ".*Runtime warning\(\): *(.*)"
+        e_error   = ".*Runtime error\(\): *(.*)"
+
         s = subprocess.Popen(xcmd
                              ,stdout=subprocess.PIPE
                              ,stderr=subprocess.PIPE
                              )
         sout,eout = s.communicate()
-        if s.returncode:
-            print(_('savesection_gcmc: returncode= %d') % s.returncode)
-            print(_('savesection_gcmc: stdout= %s') % sout)
-            print(_('savesection_gcmc: stderr= %s') % eout)
+        m_txt = ""
+        w_txt = ""
+        e_txt = ""
+        compile_txt = ""
+
+        if eout:
+            for line in eout.split("\n"):
+                r_message = re.search(e_message,line)
+                r_warning = re.search(e_warning,line)
+                r_error = re.search(e_error,line)
+                if r_message:
+                    m_txt += r_message.group(1) + "\n"
+                elif r_warning:
+                    w_txt += r_warning.group(1) + "\n"
+                elif r_error:
+                    e_txt += r_error.group(1) + "\n"
+                else:
+                    compile_txt += line
+
+        if m_txt != "":
+            user_message(mtype=gtk.MESSAGE_INFO
+                ,title='gcmc INFO'
+                ,msg="gcmc File:\n%s\n\n%s"%(m.sub_file,m_txt)
+                )
+        if w_txt != "":
             user_message(mtype=gtk.MESSAGE_WARNING
-                        ,title='gcmc Error'
-                        ,msg="%s\n%s"%(sout,eout)
-                        )
-            return False
+                ,title='gcmc WARNING'
+                ,msg="gcmc File:\n%s\n\n%s"%(m.sub_file,w_txt)
+                )
+        if e_txt != "":
+            user_message(mtype=gtk.MESSAGE_ERROR
+                ,title='gcmc ERROR'
+                ,msg="gcmc File:\n%s\n\n%s"%(m.sub_file,e_txt)
+                )
+        if compile_txt != "":
+            user_message(mtype=gtk.MESSAGE_ERROR
+                ,title='gcmc Compile ERROR'
+                ,msg="gcmc File:%s"%(compile_txt)
+                )
+        if s.returncode:
+            return False ;# fail
 
         self.mypg.savesec.append(
                  SaveSection(mypg     = self.mypg

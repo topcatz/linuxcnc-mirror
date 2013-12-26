@@ -2343,11 +2343,12 @@ proc ::ngcgui::savesection_gcmc {hdl} {
       }
     }
      
-#   puts stderr "   cmd=$cmd"
-#   puts stderr "  opts=$opts"
-#   puts stderr " ifile=$ifile"
-#   puts stderr "   pwd=[pwd]"
-#   puts stderr "exists=[file exists $ifile]"
+#   puts stderr "     cmd=$cmd"
+#   puts stderr "    opts=$opts"
+#   puts stderr "   ifile=$ifile"
+#   puts stderr "funcname=$funcname"
+#   puts stderr "     pwd=[pwd]"
+#   puts stderr "  exists=[file exists $ifile]"
 
     set eline "$cmd $opts $ifile"
     if $::ngc($hdl,verbose) {
@@ -2361,19 +2362,65 @@ proc ::ngcgui::savesection_gcmc {hdl} {
     #    "child process exited abnormally"
     # so warnings ($?=0) cause abort even though file created
     # partial file may be left on error so you cant tell by existence
-    # could parse each warning message 
+    # so, parse each warning message 
 
-    # not-fatal "Number of decimals less than 3 severely limits accuracy"
+    # parse messages on stderr from gcmc
+    set e_message ".*Runtime message\\(\\): *\(.*\)"
+    set e_warning ".*Runtime warning\\(\\): *\(.*\)"
+    set e_error   ".*Runtime error\\(\\): *\(.*\)"
+
+    set m_txt ""; set w_txt ""; set e_txt ""; set compile_txt ""
     if [catch {set result [eval exec $eline]} msg] {
-      set answer [tk_dialog .gcmcproblem \
-          "gcmc error"\
-          "$msg"\
-          warning -1 \
-          "OK"]
-      return 0; #fail
+      set lmsg [split $msg \n]
+      foreach line $lmsg {
+        #puts l=$line
+        if {[regexp $e_message $line match txt]} {
+          set  m_txt "$m_txt\n$txt"
+        } elseif { [regexp $e_warning $line match txt]} {
+          set  w_txt "$w_txt\n$txt"
+        } elseif { [regexp $e_error $line match txt]} {
+          set  e_txt "$e_txt\n$txt"
+        } else {
+          if {"$line" != ""} {
+            set  compile_txt "$compile_txt\n$line"
+          }
+        }
+      }
+      if {"$m_txt" != ""} {
+        set answer [tk_dialog .gcmcinfor \
+            "gcmc INFO"\
+            "gcmc file:\n$ifile\n\n$m_txt"\
+            info -1 \
+            "OK"]
+      }
+      if {"$w_txt" != ""} {
+        set answer [tk_dialog .gcmcwarning \
+            "gcmc WARNING"\
+            "gcmc file:\n$ifile\n\n$w_txt"\
+            warning -1 \
+            "OK"]
+      }
+      if {"$e_txt" != ""} {
+        set answer [tk_dialog .gcmcerror \
+            "gcmc ERROR"\
+            "gcmc file:\n$ifile\n\n$e_txt"\
+            error -1 \
+            "OK"]
+      }
+      if {"$compile_txt" != ""} {
+        set answer [tk_dialog .gcmcerror \
+            "gcmc compile ERROR"\
+            "gcmc file:$compile_txt"\
+            error -1 \
+            "OK"]
+      }
+      if {"$e_txt" != ""} {
+        return 0 ;# fail
+      }
     } else {
       #puts "savesection_gcmc OK<$result>"
     }
+
 
     # insert the subroutine call
     lappend ::ngc($hdl,data,section) \
