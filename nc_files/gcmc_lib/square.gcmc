@@ -22,7 +22,7 @@
 //ngcgui:  zsafe =  0.1;
 //ngcgui:   zcut = -0.1; //, zcut (neg)
 //--------------------------------------------------------------------
-literal("(debug, square.gcmc:start)");
+comment("debug, square.gcmc:start");
 feedrate(frate);
 
 goto([x1, y1, zsafe]);
@@ -34,7 +34,7 @@ move([x1, y1 + height, zcut]);
 move([x1, y1, zcut]);
 
 goto([-, -, zsafe]);
-literal("(debug, square.gcmc:end)\n");
+comment("debug, square.gcmc:end");
 
 // uncomment to see how message()s are handled:
 //message("1test message in gcmc file");

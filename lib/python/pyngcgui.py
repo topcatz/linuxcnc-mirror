@@ -767,17 +767,24 @@ def clean_tmpgcmc(odir):
         shutil.move(f,os.path.join(savedir,os.path.basename(f)))
 
 def find_gcmc():
+    global g_gcmc_exe # find on first request
+    if g_gcmc_exe == "NOTFOUND": return False # earlier search failed
+    if g_gcmc_exe is not None: return True    # already found
+
     for dir in os.environ["PATH"].split(os.pathsep):
-        e = os.path.join(dir,'gcmc')
-        if os.path.isfile(e):
-            if os.access(e,os.X_OK):
+        exe = os.path.join(dir,'gcmc')
+        if os.path.isfile(exe):
+            if os.access(exe,os.X_OK):
                 clean_tmpgcmc("") # clean on first find_gcmc
-                return e
-            else:
-                user_message(mtype=gtk.MESSAGE_ERROR
-                        ,title=_('gcmc problem')
-                        ,msg = _('gcmc executable found but not executable'))
-    return None
+                g_gcmc_exe = exe
+                return True # success
+    g_gcmc_exe = "NOTFOUND"
+    user_message(mtype=gtk.MESSAGE_ERROR
+                ,title=_('Error for:')
+                ,msg = _('gcmc executable not available:'
+                + '\nCheck path and permissions'))
+    return False # fail
+
 #-----------------------------------------------------------------------------
 
 make_g_styles()
@@ -1364,20 +1371,6 @@ class SubFile():
             raise ValueError,self.errlist
 
     def read_gcmc(self):
-        global g_gcmc_exe
-        if g_gcmc_exe == "NOTFOUND": return # already handled
-        if g_gcmc_exe is None:
-            exe = find_gcmc()
-            if exe is None:
-                g_gcmc_exe = "NOTFOUND"
-                user_message(mtype=gtk.MESSAGE_ERROR
-                        ,title=_('Error for: %s ')
-                                 % os.path.basename(self.sub_file)
-                        ,msg = _('gcmc executable not available:'
-                                 + '\nCheck path and permissions'))
-            else:
-                g_gcmc_exe = exe
-
         self.gcmc_opts = [] # list of options for gcmc
         pnum = 0
         f = open(self.sub_file)
@@ -1431,6 +1424,7 @@ class SubFile():
         if self.pdict['info'] == '':
             self.pdict['info'] = 'gcmc: '+ self.pdict['subname']
         f.close()
+        return True # ok
 
 class FileSet():
     """FileSet: set of preamble,subfile,postamble files"""
@@ -1820,12 +1814,12 @@ class ControlPanel():
                 ,pst_file=''
                 ):
         self.mypg = mypg
-
+ 
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_ETCHED_IN)
         frame.set_border_width(2)
         self.box = frame
-
+        
         cpbox  = gtk.VBox()
         # fixed width so it doesn't change when switching tabs
         # fixed height to allow room for buttons below image
@@ -3163,6 +3157,10 @@ class NgcGui():
             pass
 
     def add_page(self,pre_file,sub_file,pst_file,imageoffpage=False):
+        # look for gcmc on first request for .gcmc file:
+        if os.path.splitext(sub_file)[-1] in ['.gcmc','.GCMC']:
+            if not find_gcmc(): return None
+
         self.nextpage_idx = self.nextpage_idx + 1
         opage = OnePg(pre_file=pre_file
                      ,sub_file=sub_file
