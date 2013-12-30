@@ -643,6 +643,14 @@ ifeq ($(TARGET_PLATFORM),beaglebone)
 endif
 
 
+DIR=install -d -m 0755 -o root
+FILE=install -m 0644 -o root
+TREE=cp -dR
+CONFIGFILE=install -m 0644
+EXE=install -m 0755 -o root
+SETUID=install -m 4755 -o root
+GLOB=$(wildcard $(1))
+
 # So that nothing is built as root, this rule does not depend on the touched
 # files (Note that files in depends/ might be rebuilt, and there's little that
 # can be done about it)
@@ -663,11 +671,11 @@ endif
 
 /etc/security/limits.d/linuxcnc.conf: rtapi/shmdrv/limits.d-linuxcnc.conf
 	$(Q)echo installing $@
-	$(Q)cp  $^ $@
+	$(FILE) $^ $@
 
 /etc/udev/rules.d/50-LINUXCNC-shmdrv.rules: rtapi/shmdrv/shmdrv.rules
 	$(Q)echo installing $@
-	$(Q)cp  $^ $@
+	$(FILE)  $^ $@
 
 
 # These rules allows a header file from this directory to be installed into
@@ -678,14 +686,6 @@ endif
 ../include/%.hh: %.hh
 	$(Q)-cp $^ $@
 
-
-DIR=install -d -m 0755 -o root
-FILE=install -m 0644 -o root
-TREE=cp -dR
-CONFIGFILE=install -m 0644
-EXE=install -m 0755 -o root
-SETUID=install -m 4755 -o root
-GLOB=$(wildcard $(1))
 
 ifeq ($(RUN_IN_PLACE),yes)
 define ERROR_MESSAGE
