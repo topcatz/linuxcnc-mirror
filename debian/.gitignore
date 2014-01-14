@@ -1,10 +1,16 @@
 files
 rules
 control
+control.posix
+control.rtai
+control.rtpreempt
 tmp
 linuxcnc
 linuxcnc-dev
 linuxcnc-doc-*/
+linuxcnc-posix/
+linuxcnc-rtai/
+linuxcnc-rtpreempt/
 *.substvars
 /linuxcnc.files
 /linuxcnc-dev.files
