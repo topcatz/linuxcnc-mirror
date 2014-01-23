@@ -101,7 +101,7 @@ def configure_for_installed_realtime_kernel(kernel_version, config):
         config['build-depends'].add('libudev-dev')
         config['xenomai-depends'].add('libxenomai1')
         config['xenomai-depends'].add('xenomai-runtime')
-        # FIXME: xenomai-kernel should depend on linux-image-${kernel_version} too
+        config['xenomai-kernel-depends'].add('linux-image-%s' % kernel_version)
 
     elif not config_ipipe and not config_xeno and config_rtpreempt:
         config['flavors'].add('rtpreempt')
