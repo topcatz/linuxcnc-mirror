@@ -8,6 +8,7 @@ control.xenomai
 control.xenomai-kernel
 tmp
 linuxcnc
+linuxcnc-test
 linuxcnc-dev
 linuxcnc-doc-*/
 linuxcnc-posix/

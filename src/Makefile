@@ -815,6 +815,9 @@ endif
 	$(FILE) ../share/gtksourceview-2.0/language-specs/*.lang  $(DESTDIR)$(datadir)/gtksourceview-2.0/language-specs/
 	$(FILE) rtapi/rsyslogd-linuxcnc.conf $(DESTDIR)$(sysconfdir)/rsyslog.d/linuxcnc.conf
 
+	(cd .. && tar --exclude .gitignore -cf - tests) | (cd $(DESTDIR)$(docsdir) && tar -xf -)
+	$(EXE) ../scripts/runtests $(DESTDIR)$(docsdir)/tests
+
 ifeq ($(BUILD_PYTHON),yes)
 install-kernel-indep: install-python
 install-python: install-dirs

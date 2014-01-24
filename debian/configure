@@ -30,6 +30,9 @@ config['depends'] = set()
 config['recommends'] = set()
 config['suggests'] = set()
 
+# control variables for the test package (linuxcnc-test.deb)
+config['test-depends'] = set()
+
 # Depends and Recommends for the flavor packages (linuxcnc-$FLAVOR.deb)
 config['posix-depends'] = set()
 config['posix-recommends'] = set()
@@ -166,6 +169,7 @@ def subst(infile, outfile, config):
             + " -e 's`@DEPENDS@`%s`g'" % ', '.join(config['depends'])
             + " -e 's`@RECOMMENDS@`%s`g'" % ', '.join(config['recommends'])
             + " -e 's`@SUGGESTS@`%s`g'" % ', '.join(config['suggests'])
+            + " -e 's`@TEST_DEPENDS@`%s`g'" % ', '.join(config['test-depends'])
             + " -e 's`@SRC_CONFIGURE@`%s`g'" % ' '.join(config['src/configure'])
             + " -e 's`@PYTHON_VERSION@`%d.%d`g'" % (sys.version_info[0], sys.version_info[1])
             + " -e 's`@PYTHON_VERSION_NEXT@`%d.%d`g'" % (sys.version_info[0], 1 + sys.version_info[1])
