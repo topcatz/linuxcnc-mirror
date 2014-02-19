@@ -1,4 +1,4 @@
-Getting Started V2.6.0~pre, {localdate}
+Getting Started V2.6.0\~pre, {localdate}
 =================================
 
 :lang: en

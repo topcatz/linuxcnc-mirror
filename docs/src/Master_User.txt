@@ -1,4 +1,4 @@
-User Manual V2.6.0~pre, {localdate}
+User Manual V2.6.0\~pre, {localdate}
 =============================
 
 :lang: en
