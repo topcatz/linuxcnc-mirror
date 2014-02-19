@@ -6,33 +6,40 @@ image::images/ngcgui.png[]
 
 == Overview
     
-* 'NGCGUI' is a tcl application for using LinuxCNC single-file subroutines.
+* 'NGCGUI' is a tcl application for using LinuxCNC subroutines.
 * 'NGCGUI' can run as a standalone application or can be embedded in
    multiple tab pages in the axis gui
 * 'PYNGCGUI' is an alternate, python implementation of ngcgui.
 * 'PYNGCGUI' can run as a standalone application or can be embedded as
-   tab page (with its own set of multiple tab pages) in any gui that
-   supports embedding of gladevcp applications.  Example guis include:
-   axis, touchy, and gscreen
+   a tab page (with its own set of multiple subroutine tabs) in any
+   gui that supports embedding of gladevcp applications.  Example guis include:
+   axis, touchy, gscreen and gmoccapy
 
 Using NGCGUI or PYNGCGUI:
 
 * Tab pages are provided for subroutines specified in the INI file
 * New subroutines tab pages can be added using Custom tab pages
 * Each subroutine tab page provides entry boxes for all subroutine parameters
-* The entry boxes can have an optional default value and optional label identified
-  by conventions in the subroutine file
-* Subroutines invocations are concatenated together to form a multiple step program
+* The entry boxes can have a default value and an label that
+  are identified by special comments in the subroutine file
+* Subroutine invocations are concatenated together to form a multiple step program
 * Any single-file gcode subroutine that conforms to ngcgui conventions can be used
-* Any single-file gcmc (Gcode-meta-compiler) subroutine that conforms to ngcgui
-  conventions for tagging variables can be used. (The gcmc executable
-  must be installed separately, see: http://www.vagrearg.org/content/gcmc)
+* Any gcmc (Gcode-meta-compiler) program that conforms to ngcgui conventions
+  for tagging variables can be used. (The gcmc executable must be installed
+  separately, see: http://www.vagrearg.org/content/gcmc)
+
+[NOTE]
+NGCGUI and PYNGCGUI implement the same functions and both process .ngc and .gcmc
+files that conform to a few ngcgui-specific conventions.  In this document,
+the tern NGCGUI generally refers to either application.
 
 == Demonstration Configurations
 
 A number of demonstration configurations are located in the sim directory
 of the Sample Configurations offered by the LinuxCNC configuration picker. The
-configuration picker is on the main menu Applications > CNC > LinuxCNC.
+configuration picker is on the system's main menu:
+
+  Applications > CNC > LinuxCNC.
 
 Examples are included for the axis, touchy, gscreen, and gmoccapy guis.
 These examples demonstrate both 3-axis (XYZ) cartesian configurations
@@ -40,7 +47,9 @@ These examples demonstrate both 3-axis (XYZ) cartesian configurations
 popupkeyboard for touch screen systems and other examples demonstrate
 the use of files created for the gcmc (Gcode Meta Compiler) application.
 The touchy examples also demonstrate incorporation of a gladevcp backplot
-viewer (gremlin_view).
+viewer (gremlin_view).  The simplest application is found as:
+ 
+  Sample Configurations / sim / axis / ngcgui /ngcgui_simple
 
 The example sim configurations make use of library files that provide
 example gcode subroutine (.ngc) files and Gcode-meta-compiler (.gcmc) files:
@@ -79,18 +88,24 @@ example gcode subroutine (.ngc) files and Gcode-meta-compiler (.gcmc) files:
 ** 'star.gcmc' - gcmc demo illustrating functions and arrays
 ** 'wheels.gcmc' - gcmc demo of complex patterns
 
-To view the demonstration subroutines press the 'E-Stop'
+To try a demonstration, select a sim configuration and start
+the linuxCNC program.  If using the axis gui, press the 'E-Stop'
 image:images/tool_estop.gif[] then 'Machine Power'
 image:images/tool_power.gif[] then 'Home All'. Pick a ngcgui tab, fill in
-any empty blanks with sensible values  and press
-'Create Feature' then 'Finalize'. Now press the 'Run'
+any empty blanks with sensible values and press
+'Create Feature' then 'Finalize'. Finally  press the 'Run'
 image:images/tool_run.gif[] button to watch it run.  Experiment
 by creating multiple features and features from different tab pages.
 
 [NOTE]
 The demonstration configs create tab pages for just a few of the provided
 examples.  Any gui with a Custom tab page can open any of the library
-example subroutines.
+example subroutines or any user file if it is in the linuxCNC subroutine
+path.
+
+[NOTE]
+To see special key bindings, click inside an ngcgui tab page to get
+focus and then presss Control-k.
 
 [NOTE]
 The demonstration subroutines should run on the simualated
@@ -100,17 +115,17 @@ before running on a real machine.
 
 == Library Locations
 
-The simulation configs for ngcgui use symbolic links to non-user-writable
-LinuxCNC libraries for:
+In linuxCNC installations installed from deb packages, the simulation configs
+for ngcgui use symbolic links to non-user-writable LinuxCNC libraries for:
 
 * 'nc_files/ngcgui_lib'             ngcgui-compatible subfiles
 * 'nc_files/ngcgui_lib/lathe'       ngcgui-compatible lathe subfiles
-* 'nc_files/gcmc_lib'               gcmc-compatible subfiles
+* 'nc_files/gcmc_lib'               ngcgui-gcmc-compatible programs
 * 'nc_files/ngcgui_lib/utilitysubs' Helper subroutines
 * 'nc_files/ngcgui_lib/mfiles'      User M files
 
-These libraries are located by the ini file items that specify the
-search paths used by linuxCNC (and ngcgui):
+These libraries are located by ini file items that specify the search
+paths used by linuxCNC (and ngcgui):
 
 ----
 [RS274NGC]
@@ -121,14 +136,13 @@ USER_M_PATH     = ../../nc_files/ngcgui_lib/mfiles
 [NOTE]
 These are long lines (not continued on multiple lines)
 that specify the directories used in a search patch.  The
-directory names are separated by colons (:)
+directory names are separated by colons (:).  No spaces should
+occur between directory names.
 
 A user can create new directories for their own subroutines and
 M-files and add them to the search path(s).
 
-
 For example, a user could create directories from the terminal with the commands:
-
 ----
 mkdir /home/myusername/mysubs
 mkdir /home/myusername/mymfiles
@@ -157,7 +171,7 @@ NGCGUI_SUBFILE = example.ngc
 ----
 
 LinuxCNC (and ngcgui) use the first file found when searching
-directories in a search path.  With this behavior, you can
+directories in the search path.  With this behavior, you can
 supersede an ngcgui_lib subfile by placing a subfile with an
 identical name in a directory that is found earlier in the path
 search. More information can be found in the INI chapter of the
@@ -193,7 +207,7 @@ Usage:
 [NOTE]
 As a standalone application, ngcgui handles a single subroutine file which
 can be invoked multiple times.  Multiple standalone ngcgui applications
-can be started.
+can be started independently.
 
 === Standalone PYNGCGUI
 For usage, type in a terminal:
@@ -226,7 +240,7 @@ Notes:
       One set of files can be specified from cmdline.
       Multiple sets of files can be specified from an inifile.
       If --ini is NOT specified:
-         search for a running linuxcnc and use it's inifile
+         search for a running linuxCNC and use it's inifile
 ----
     
 [NOTE]
@@ -247,30 +261,31 @@ sections below for additional items needed)
    ttt created subfiles. (alternate: mm_std.ngc)
 
 [NOTE]
-The optional true type tracer items are used to specify an ngcgui-compatible application
+The optional truetype tracer items are used to specify an ngcgui-compatible tab page
 that uses the application truetype-tracer.  The truetype-tracer application must
-be installed independently and located in the user PATY
+be installed independently and located in the user PATH.
  
 === Embedding PYNGCGUI as a gladevcp tab page in a gui
 The following INI file items go in the [DISPLAY] section for use with the
 axis, gscreen, or touchy guis.  (See additional sections below for additional
 items needed)
+
 * 'EMBED_TAB_NAME = Pyngcgui'  - name to appear on embedded tab
 * 'EMBED_TAB_COMMAND = gladevcp -x {XID} pyngcgui_axis.ui' - invokes gladevcp
 * 'EMBED_TAB_LOCATION = name_of_location' - where the embeded page is located
 
 [NOTE]
 The EMBED_TAB_LOCATION specifier is not used for the axis gui.  While
-pyngcgui can be embedded in axis, integration is more comprehensive using
+pyngcgui can be embedded in axis, integration is more complete when using
 ngcgui (using TKPKG = Ngcgui 1.0).  To specify the EMBED_TAB_LOCATION
 for other guis, see the example ini files.
 
 [NOTE]
-  The true type tracer gui front-end is not currently available for gladevcp
+  The truetype tracer gui front-end is not currently available for gladevcp
 applications.
 
 === Additional INI File items required for ngcgui or pyngcgui
-The following INI file items for go in the [DISPLAY] section for any gui
+The following INI file items go in the [DISPLAY] section for any gui
 that embeds either ngcgui or pyngcgui.
 
 * 'NGCGUI_FONT = Helvetica -12 normal' - specifices the font name,size, normal|bold
@@ -298,10 +313,6 @@ subroutines use other subroutines so check to be sure you have the
 dependences, if any, in a SUBROUTINE_PATH directory.  Some subroutines may
 use custom Mfiles which must be in a directory specified by the
 [RS274NGC]USER_M_PATH.
-
-[NOTE]
-This is not a complete INI the items show are what is used by ngcgui.
-Many additional items are required by LinuxCNC to have a complete INI file.
 
 .Sample axis-gui-based INI
 ----
@@ -342,6 +353,12 @@ TTT_PREAMBLE      = in_std.ngc
 
 PROGRAM_PREFIX    = ../../nc_files
 ----
+
+[NOTE]
+The above is not a complete axis gui INI -- the items show are those 
+used by ngcgui.  Many additional items are required by LinuxCNC to have
+a complete INI file.
+
 
 === Truetype Tracer
 
@@ -395,7 +412,7 @@ specifies a path starting in username's home directory.
 
 .Relative Paths
 Relative paths are based on the startup directory which is the directory
-containing the ini file.  Using relative paths can facilitate relocation of
+containing the INI file.  Using relative paths can facilitate relocation of
 configurations but requires a good understanding of linux path specifiers.
 
 ....
@@ -409,7 +426,8 @@ Multiple directories can be specified with [RS274NGC]SUBROUTINE_PATH by
 separating them with colons.  The following example illustrates the format
 for multiple directories and shows the use of relative and absolute paths.
 
-`Example: [RS274NGC]SUBROUTINE_PATH = ../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs:/tmp/tmpngc`
+`Example:
+[RS274NGC]SUBROUTINE_PATH = ../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs:/tmp/tmpngc`
 
 This is one long line, do not continue on multiple lines.  When linuxCNC and/or
 ngcgui searches for files, the first file found in the search is used.
@@ -439,7 +457,7 @@ directory(ies) to discourage attempts to use them as subfiles.  Files not intend
 for use as subfiles can include a special comment: "(not_a_subfile)" so that
 ngcgui will reject them automatically with a relevant message.
 
-=== INI File item details
+=== Summary of INI File item details for NGCGUI usage
 ....
 Item:    [RS274NGC]SUBROUTINE_PATH = dirname1:dirname2:dirname3 ...
 Example: [RS274NGC]SUBROUTINE_PATH = ../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs
@@ -447,21 +465,22 @@ Note:    Optional, but very useful to organize subfiles and utility files
 
 Item:    [RS274NGC]USER_M_PATH = dirname1:dirname2:dirname3 ...
 Example: [RS274NGC]USER_M_PATH = ../../nc_files/ngcgui_lib/mfiles
-Note:    Optional, may be needed to locate custom user mfiles
+Note:    Optional, needed to locate custom user mfiles
 
 
-Item:    [DISPLAY]EMBED_TAB_NAME = name to display on gladevcp tab page
+Item:    [DISPLAY]EMBED_TAB_NAME = name to display on embedded tab page
 Example: [DISPLAY]EMBED_TAB_NAME = Pyngcgui
 Note:    The entries: EMBED_TAB_NAME,EMBED_TAB_COMMAND,EMBED_TAB_LOCATION
-         define an embedded application
+         define an embedded application for several linuxCNC guis
 
 Item:    [DISPLAY]EMBED_TAB_COMMAND = programname followed by arguments
 Example: [DISPLAY]EMBED_TAB_COMMAND = gladevcp -x {XID} pyngcgui_axis.ui
-Note:    see the man page for gladevcp
+Note:    For gladevcp applications, see the man page for gladevcp
 
 Item:    [DISPLAY]EMBED_TAB_LOCATION = name_of_location
 Example: [DISPLAY]EMBED_TAB_LOCATION = notebook_main
-Note:    not required for the axis gui
+Note:    See example INI files for possible locations
+         Not required for the axis gui
 
 
 Item:    [DISPLAY]PROGRAM_PREFIX = dirname
@@ -480,26 +499,28 @@ Example: [DISPLAY]NGCGUI_FONT = Helvetica -12 normal
 Note:    Optional, font_descriptor is a tcl-compatible font specifier
          with items for fonttype -fontsize fontweight
          Default is: Helvetica -10 normal
+         Smaller font sizes may be useful for small screens
+         Larger font sizes may be helpful for touch screen applications
 
 Item:    [DISPLAY]NGCGUI_SUBFILE = subfile_filename
 Example: [DISPLAY]NGCGUI_SUBFILE = simp.ngc
-Example: [DISPLAY]NGCGUI_SUBFILE = xyz.ngc
+Example: [DISPLAY]NGCGUI_SUBFILE = square.gcmc
 Example: [DISPLAY]NGCGUI_SUBFILE = ""
 Note:    Use one or more items to specify ngcgui-compatible
-         subfiles that require an axis tab page on startup.
+         subfiles or gcmc programs that require a tab page on startup.
          A "Custom" tab will be created when the filename is "".
          A user can use a "Custom" tab to browse the file system
          and identify preamble, subfile, and postamble files.
 
 Item:    [DISPLAY]NGCGUI_PREAMBLE = preamble_filename
 Example: [DISPLAY]NGCGUI_PREAMBLE = in_std.ngc
-Note:    Optional, when specified, the file is prepended to all subfiles.
+Note:    Optional, when specified, the file is prepended to a subfile.
          Files created with "Custom" tab pages use the preamble specified
          with the page.
 
 Item:    [DISPLAY]NGCGUI_POSTAMBLE = postamble_filename
 Example: [DISPLAY]NGCGUI_POSTAMBLE = bye.ngc
-Note:    Optional, when specified, the file is appended to all subfiles.
+Note:    Optional, when specified, the file is appended to a subfiles.
          Files created with "Custom" tab pages use the postamble specified
          with the page.
 
@@ -509,11 +530,11 @@ Note:    Multiple options are separated by blanks.
          By default, ngcgui configures tab pages so that:
             1) a user can make new tabs
             2) a user can remove tabs (except for the last remaining one)
-            3) finalized files are automatically sent to axis
+            3) finalized files are automatically sent to linuxCNC
             4) an image frame (iframe) is made available to display
-               an image for the subfile
+               an image for the subfile (if an image is provided)
             5) the ngcgui result file sent to linuxCNC is terminated with
-               an m2
+               an m2 (and incurs m2 side-effects)
 
          The options nonew, noremove, noauto, noiframe, nom2 respectively
          disable these default behaviors.
@@ -541,7 +562,8 @@ Note:    Multiple options are separated by blanks.
          additional tab pages.
 ....
 
-== Single-File Gcode Subroutine Requirements
+=== Subroutine Requirements
+== Single-File Gcode (.ngc) Subroutine Requirements
 
 An NGCGUI-compatible subfile contains a single subroutine definition. The name
 of the subroutine must be the same as the filename (not including the .ngc
@@ -552,11 +574,16 @@ subroutines are compatible with NGCGUI. For more information see the
 The first non-comment line should be a sub statement.
 The last non-comment line should be a endsub statement.
 
-.examp.ngc:
+.example.ngc:
 ----
+(info: info_text_to_appear_at_top_of_tab_page)
+; comment line beginning with semicolon
+( comment line using parentheses)
 o<examp> sub
   BODY_OF_SUBROUTINE
 o<examp> endsub
+; comment line beginning with semicolon
+( comment line using parentheses)
 ----
 
 The body of the subroutine should begin with a set of statements that define
@@ -604,20 +631,23 @@ If comment_text is included, it will be used to identify the input
 instead of the parameter name.
 
 .Global Named Parameters
-Notes on global named parameters (#<_globalname>) and ngcgui:
+Notes on global named parameters and ngcgui:
+
+(global named parameters have a leading underscore in the name, like
+#<_someglobalname>)
 
 As in many programming languages, use of globals is powerful but can often lead
 to unexpected consequences. In LinuxCNC, existing global named parameters will be
 valid at subroutine execution and subroutines can modify or create global named
 parameters.
 
-The use of global named parameters as inputs to subroutines is discouraged
-because such usage requires the establishment and maintenance of a well-defined
-global context that is problematic to maintain. Using numbered parameters #1
+Passing information to subroutines using global named parameters is discouraged
+since such usage requires the establishment and maintenance of a well-defined
+global context that is difficult to maintain. Using numbered parameters #1
 thru #30 as subroutine inputs should be sufficient to satisfy a wide range of
 design requirements.
 
-While input global named parameters are discouraged, linuxcnc subroutines must use
+While input global named parameters are discouraged, linuxCNC subroutines must use
 global named parameters for returning results. Since ngcgui-compatible
 subfiles are aimed at gui usage, return values are not a common requirement.
 However, ngcgui is useful as a testing tool for subroutines which do return
@@ -635,7 +665,7 @@ o<examp> sub
 #<_examp:result> = #5410       (return the current tool diameter)
 ...
 o<helper> call [#<x1>] [#<x2>] (call a subroutine)
-#<xresult> = #<_helper:answer> (localize immediately the helper result)
+#<xresult> = #<_helper:answer> (immediately localize the helper global result)
 #<_helper:answer> = 0.0        (nullify global named parameter used by subroutine)
 ...
 o<examp> endsub
@@ -677,7 +707,7 @@ so that ngcgui will reject them automatically with a relevant message.
 An optional image file (.png,.gif,.jpg,.pgm) can accompany a subfile. The
 image file can help clarify the parameters used by the subfile. The image file
 should be in the same directory as the subfile and have the same name with an
-appropriate image suffix, e.g. the subfile examp.ngc could be accompanied by an
+appropriate image suffix, e.g. the subfile example.ngc could be accompanied by an
 image file examp.png. Ngcgui attempts to resize large images by subsampling
 to a size with maximum width of 320 and maximum height of 240 pixels.
 
@@ -692,6 +722,70 @@ the Gcode meta compiler (gcmc)
 
 Additional user sumitted subroutines can be found on the Forum in the
 Subroutines Section.
+
+== Gcode-meta-compiler (.gcmc) file requirements
+Files for the Gcode-meta-compiler (gcmc) are read by ngcgui and it
+creates entry boxes for variables tagged in the file.  When a feature
+for the file is finalized, ngcgui passes the file as input to the gcmc
+compiler and, if the compile is successful, the resulting gcode file
+is sent to linuxCNC for execution.  The resulting file is formatted as
+single-file subroutine; .gcmc files and .ngc files can be intermixed
+by ngcgui. 
+
+The variables identified for  inclusion in ngcgui are tagged with lines
+that will appear as comments to the gcmc compiler.
+
+.Example variable tags
+----
+//ngcgui: varname1 = 
+//ngcgui: varname2 = value2
+//ngcgui: varname3 = value3, label3;
+Examples:
+//ngcgui: zsafe =
+//ngcgui: feedrate = 10
+//ngcgui: xl = 0, x limit
+----
+For these examples, the entry box for varname1 will have no default,
+the entry box for varname2 will have a default of value2, and the
+entry box for varname 3 will have a default of value 3 and a label 
+label3 (instead of varname3).  The default values must be numbers.
+
+To make it easier to modify valid lines in a gcmc file, alternate
+tag line formats accepted.  The alternate formats ignore trailing 
+semicolons (;) and trailing comment markers (//)  With this provision,
+it is often makes it possible to just add the //ngcgui: tag to 
+existing lines in a .gcmc file.
+
+.Alternate variable tags
+----
+//ngcgui: varname2 = value2;
+//ngcgui: varname3 = value3; //, label3;
+Examples:
+//ngcgui: feedrate = 10;
+//ngcgui: xl = 0; //, x limit
+----
+
+An info line that will appear at the top of a tab page may be optionally
+included with a line tagged as:
+
+.Info tag
+----
+//ngcgui: info: text_to_appear_at_top_of_tab_page
+----
+
+When required, options can be passed to the gcmc compiler with a line tagged:
+
+.Option line tag
+----
+//ngcgui: -option_name option_value
+Example:
+//ngcgui: --precision 5
+----
+
+Options for gcmc are available with the terminal command:
+----
+gcmc --help
+----
 
 == DB25 Example
 
