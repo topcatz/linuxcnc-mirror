@@ -559,11 +559,11 @@ Note:    Multiple options are separated by blanks.
          nonew, noremove, and noiframe options are not applicable
          for "Custom" tabs.  Do not use "Custom" tabs if you want
          to limit the user's ability to select subfiles or create
-         additional tab pages.
+         additional tab pages. 
 ....
 
-=== Subroutine Requirements
-== Single-File Gcode (.ngc) Subroutine Requirements
+== File Requirements for NGCGUI Compatibility
+=== Single-File Gcode (.ngc) Subroutine Requirements
 
 An NGCGUI-compatible subfile contains a single subroutine definition. The name
 of the subroutine must be the same as the filename (not including the .ngc
@@ -723,7 +723,7 @@ the Gcode meta compiler (gcmc)
 Additional user sumitted subroutines can be found on the Forum in the
 Subroutines Section.
 
-== Gcode-meta-compiler (.gcmc) file requirements
+=== Gcode-meta-compiler (.gcmc) file requirements
 Files for the Gcode-meta-compiler (gcmc) are read by ngcgui and it
 creates entry boxes for variables tagged in the file.  When a feature
 for the file is finalized, ngcgui passes the file as input to the gcmc
