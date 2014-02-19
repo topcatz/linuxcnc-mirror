@@ -1,4 +1,4 @@
-HAL Manual V2.5, {localdate}
+HAL Manual V2.6.0~pre, {localdate}
 ============================
 
 :lang: en

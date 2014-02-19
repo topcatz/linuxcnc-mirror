@@ -1,4 +1,4 @@
-Integrator Manual V2.5, {localdate}
+Integrator Manual V2.6.0~pre, {localdate}
 ===================================
 
 :lang: en

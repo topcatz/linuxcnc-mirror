@@ -1,4 +1,4 @@
-Developer Manual V2.5, {localdate}
+Developer Manual V2.6.0~pre, {localdate}
 ==================================
 
 :lang: en
