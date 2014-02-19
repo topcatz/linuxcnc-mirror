@@ -151,9 +151,7 @@ mkdir /home/myusername/mymfiles
 And then create or copy system-provided files to these user-writable directories.
 For instance, a user might create a ngcgui-compatible subfile named:
 
-----
 /home/myusername/mysubs/example.ngc
-----
 
 To use files in new directories, the ini file must be edited to include the new
 subfiles and to augment the search path(s).  For this example:
@@ -182,7 +180,7 @@ Integrators Manual.
 === Standalone NGCGUI
 For usage, type in a terminal:
 ----
-$ ngcgui --help
+ngcgui --help
 Usage:
   ngcgui --help | -?
   ngcgui [Options] -D nc_files_directory_name
@@ -212,7 +210,7 @@ can be started independently.
 === Standalone PYNGCGUI
 For usage, type in a terminal:
 ----
-$ pyngcgui --help
+pyngcgui --help
 Usage:
 pyngcgui [Options] [sub_filename]
 Options requiring values:
@@ -270,9 +268,12 @@ The following INI file items go in the [DISPLAY] section for use with the
 axis, gscreen, or touchy guis.  (See additional sections below for additional
 items needed)
 
-* 'EMBED_TAB_NAME = Pyngcgui'  - name to appear on embedded tab
-* 'EMBED_TAB_COMMAND = gladevcp -x {XID} pyngcgui_axis.ui' - invokes gladevcp
-* 'EMBED_TAB_LOCATION = name_of_location' - where the embeded page is located
+.EMBED_ Items
+....
+EMBED_TAB_NAME = Pyngcgui - name to appear on embedded tab
+EMBED_TAB_COMMAND = gladevcp -x {XID} pyngcgui_axis.ui - invokes gladevcp
+EMBED_TAB_LOCATION = name_of_location - where the embeded page is located
+....
 
 [NOTE]
 The EMBED_TAB_LOCATION specifier is not used for the axis gui.  While
@@ -398,6 +399,7 @@ followed by multiple directories specfied by:
   [RS274NGC]SUBROUTINE_PATH
 
 .Directories
+
 Directories may be specifed as absolute paths or relative paths.
 ....
 Example: [DISPLAY]PROGRAM_PREFIX = /home/myname/linuxcnc/nc_files
@@ -426,8 +428,10 @@ Multiple directories can be specified with [RS274NGC]SUBROUTINE_PATH by
 separating them with colons.  The following example illustrates the format
 for multiple directories and shows the use of relative and absolute paths.
 
-`Example:
+.Multiple Directories Example:
+----
 [RS274NGC]SUBROUTINE_PATH = ../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs:/tmp/tmpngc`
+----
 
 This is one long line, do not continue on multiple lines.  When linuxCNC and/or
 ngcgui searches for files, the first file found in the search is used.
@@ -446,7 +450,10 @@ directory(ies) and put them at the beginning of the [RS274NGC]SUBROUTINE_PATH.
 In the following example, files in /home/myname/linuxcnc/mysubs will be found before
 files in ../../nc_files/ngcgui_lib.
 
-`Example: [RS274NGC]SUBROUTINE_PATH = /home/myname/linuxcnc/mysubs:../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs`
+.Adding User Directory Example: 
+----
+[RS274NGC]SUBROUTINE_PATH = /home/myname/linuxcnc/mysubs:../../nc_files/ngcgui_lib:../../nc_files/ngcgui_lib/utilitysubs`
+----
 
 New users may inadvertently try to use files that are not structured to be
 compatible with ngcgui requirements.  Ngcgui will likely report numerous errors
@@ -735,12 +742,15 @@ by ngcgui.
 The variables identified for  inclusion in ngcgui are tagged with lines
 that will appear as comments to the gcmc compiler.
 
-.Example variable tags
+.Example variable tags formats
 ----
 //ngcgui: varname1 = 
 //ngcgui: varname2 = value2
 //ngcgui: varname3 = value3, label3;
-Examples:
+----
+
+.Examples:
+----
 //ngcgui: zsafe =
 //ngcgui: feedrate = 10
 //ngcgui: xl = 0, x limit
@@ -756,11 +766,13 @@ semicolons (;) and trailing comment markers (//)  With this provision,
 it is often makes it possible to just add the //ngcgui: tag to 
 existing lines in a .gcmc file.
 
-.Alternate variable tags
+.Alternate variable tag formats
 ----
 //ngcgui: varname2 = value2;
 //ngcgui: varname3 = value3; //, label3;
-Examples:
+----
+.Examples:
+----
 //ngcgui: feedrate = 10;
 //ngcgui: xl = 0; //, x limit
 ----
@@ -775,10 +787,12 @@ included with a line tagged as:
 
 When required, options can be passed to the gcmc compiler with a line tagged:
 
-.Option line tag
+.Option line tag format
 ----
 //ngcgui: -option_name option_value
-Example:
+----
+.Example:
+----
 //ngcgui: --precision 5
 ----
 
