@@ -1,9 +1,10 @@
+:linuxcncversion: {sys: cat ../VERSION}
 :lang: fr
 :toc:
 :localdate: {sys: date +%d/%m/%Y}
 :ascii-ids:
-Manuel de HAL V2.5  {localdate}
-===============================
+Manuel de HAL V{linuxcncversion}, {localdate}
+=============================================
 :masterdir: {indir}
 :leveloffset: 1
 

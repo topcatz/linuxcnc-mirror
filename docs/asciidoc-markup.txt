@@ -3,9 +3,9 @@ This document is a guide for using asciidoc markup
 
 Master Document file Headers, first line replace en with two letter language code
 ---------------------------------------------------------------------------------
-
-Getting Started V2.5, {localdate}
-=================================
+:linuxcncversion: = {sys: cat ../VERSION}
+Getting Started V{linuxcncversion}, {localdate}
+===============================================
 :lang: en
 :masterdir: {indir}
 :leveloffset: 1

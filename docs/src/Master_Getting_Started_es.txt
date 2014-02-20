@@ -1,5 +1,6 @@
-Primeros pasos V2.5, {localdate}
-=================================
+:linuxcncversion: {sys: cat ../VERSION}
+Primeros pasos V{linuxcncversion}, {localdate}
+==============================================
 
 :lang: es
 

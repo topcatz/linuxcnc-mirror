@@ -1,9 +1,10 @@
+:linuxcncversion: {sys: cat ../VERSION}
 :lang: fr
 :toc:
 :localdate: {sys: date +%d/%m/%Y}
 :ascii-ids:
-Manuel de l'intégrateur V2.5  {localdate}
-=========================================
+Manuel de l'intégrateur V{linuxcncversion}, {localdate}
+=======================================================
 :masterdir: {indir}
 :leveloffset: 1
 

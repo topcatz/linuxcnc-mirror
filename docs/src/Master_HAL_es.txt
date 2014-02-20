@@ -1,5 +1,6 @@
-Manual de HAL V2.5, {localdate}
-===============================
+:linuxcncversion: {sys: cat ../VERSION}
+Manual de HAL V{linuxcncversion}, {localdate}
+=============================================
 
 :lang: es
 

@@ -1,5 +1,6 @@
-Getting Started V2.5, {localdate}
-=================================
+:linuxcnversion: {sys: cat ../VERSION}
+Getting Started V{linuxcnversion}, {localdate}
+==============================================
 
 :lang: en
 

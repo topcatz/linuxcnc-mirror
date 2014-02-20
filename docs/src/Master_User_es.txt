@@ -1,5 +1,6 @@
-Manual del Usuario V2.5, {localdate}
-====================================
+:linuxcncversion: {sys: cat ../VERSION}
+Manual del Usuario V{linuxcncversion}, {localdate}
+==================================================
 
 :lang: es
 
