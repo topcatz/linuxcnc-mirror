@@ -2,8 +2,8 @@
 :toc:
 :localdate: {sys: date +%d/%m/%Y}
 :ascii-ids:
-Manuel de l'utilisateur V2.5  {localdate}
-=========================================
+Manuel de l'utilisateur V2.6PRERELEASE, {localdate}
+===================================================
 :masterdir: {indir}
 :leveloffset: 1
 

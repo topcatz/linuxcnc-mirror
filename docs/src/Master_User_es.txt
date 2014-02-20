@@ -1,5 +1,5 @@
-Manual del Usuario V2.5, {localdate}
-====================================
+Manual del Usuario V2.6PRERELEASE, {localdate}
+==============================================
 
 :lang: es
 

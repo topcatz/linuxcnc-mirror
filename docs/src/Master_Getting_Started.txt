@@ -1,5 +1,5 @@
-Getting Started V2.5, {localdate}
-=================================
+Getting Started V2.6PRERELEASE, {localdate}
+===========================================
 
 :lang: en
 

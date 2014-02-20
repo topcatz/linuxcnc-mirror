@@ -1,5 +1,5 @@
-Manual Integrador V2.5, {localdate}
-===================================
+Manual Integrador V2.6PRERELEASE, {localdate}
+=============================================
 
 :lang: es
 
