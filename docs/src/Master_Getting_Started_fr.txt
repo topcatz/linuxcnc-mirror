@@ -1,9 +1,10 @@
 :lang: fr
+:linuxcncversion: {sys: cat ../VERSION}
 :ascii-ids:
 :toc:
 :localdate: {sys: date +%d/%m/%Y}
-Guide de démarrage V2.5  {localdate}
-====================================
+Guide de démarrage V{linuxcncversion}, {localdate}
+==================================================
 :masterdir: {indir}
 :leveloffset: 1
 

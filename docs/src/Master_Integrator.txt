@@ -1,7 +1,7 @@
-Integrator Manual V2.5, {localdate}
-===================================
-
 :lang: en
+:linuxcncversion: {sys: cat ../VERSION}
+Integrator Manual V{linuxcncversion}, {localdate}
+=================================================
 
 :masterdir: {indir}
 

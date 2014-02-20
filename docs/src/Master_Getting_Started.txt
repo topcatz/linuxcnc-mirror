@@ -1,7 +1,7 @@
-Getting Started V2.5, {localdate}
-=================================
-
 :lang: en
+:linuxcnversion: {sys: cat ../VERSION}
+Getting Started V{linuxcnversion}, {localdate}
+==============================================
 
 :masterdir: {indir}
 

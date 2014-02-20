@@ -1,7 +1,7 @@
-HAL Manual V2.5, {localdate}
-============================
-
 :lang: en
+:linuxcncversion: {sys: cat ../VERSION}
+HAL Manual V{linuxcncversion}, {localdate}
+==========================================
 
 :masterdir: {indir}
 

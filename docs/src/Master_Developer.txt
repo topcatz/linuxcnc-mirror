@@ -1,7 +1,8 @@
-Developer Manual V2.5, {localdate}
-==================================
-
 :lang: en
+:linuxcncversion: {sys: cat ../VERSION}
+Developer Manual V{linuxcncversion}, {localdate}
+================================================
+
 :masterdir: {indir}
 
 

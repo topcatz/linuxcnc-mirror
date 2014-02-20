@@ -1,7 +1,7 @@
-Manual del Usuario V2.5, {localdate}
-====================================
-
 :lang: es
+:linuxcncversion: {sys: cat ../VERSION}
+Manual del Usuario V{linuxcncversion}, {localdate}
+==================================================
 
 :masterdir: {indir}
 
